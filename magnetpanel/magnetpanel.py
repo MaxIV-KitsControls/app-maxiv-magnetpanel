@@ -191,6 +191,7 @@ class DeviceRowsTable(TaurusWidget):
             self._config = defaultdict(dict)
 
             for r, (dev, attrs) in enumerate(self.attributes.items()):
+                print dev
                 item = QtGui.QTableWidgetItem(dev)
                 self.table.setItem(r, 0, item)
                 for c, att in enumerate(attrs):
@@ -448,7 +449,7 @@ class PowerSupplyPanel(TaurusWidget):
 
 class MagnetCircuitPanel(TaurusWidget):
 
-    attrs = ["energy", "MainFieldComponent", "currentActual", "currentCalculated",
+    attrs = ["energy", "MainFieldComponent", "currentActual", "currentSet",
              "fixNormFieldOnEnergyChange"]
 
     def __init__(self, parent=None):
@@ -576,11 +577,9 @@ class CyclePanel(TaurusWidget):
     def handle_cycling_state(self, evt_src, evt_type, evt_value):
         if evt_type in [PyTango.EventType.CHANGE_EVENT,
                         PyTango.EventType.PERIODIC_EVENT]:
-            print "cycle state", evt_value.value
-            self.trend_trigger.emit(evt_value.value)
+             self.trend_trigger.emit(evt_value.value)
 
     def set_trend_paused(self, value):
-        print "set_trend_paused", not value
         self.trend.setPaused(not value)
 
 
