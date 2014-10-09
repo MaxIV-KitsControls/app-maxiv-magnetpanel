@@ -10,9 +10,6 @@ import PyTango
 from taurus.qt import QtCore, QtGui
 from taurus import Attribute
 
-from taurus.qt.qtgui.input import TaurusValueLineEdit
-#from maxwidgets.input import MAXLineEdit
-
 from taurus.qt.qtgui.panel import TaurusWidget, TaurusForm
 from taurus.qt.qtgui.display import TaurusLabel, TaurusLed, TaurusLabel
 from taurus.qt.qtgui.button import TaurusCommandButton
