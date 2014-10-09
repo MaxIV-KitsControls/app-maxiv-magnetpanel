@@ -28,6 +28,10 @@ class MAXLineEdit (TaurusValueLineEdit):
     def __init__(self, parent=None, designMode=False):
         TaurusValueLineEdit.__init__(self, parent, designMode)
         self.setFocusPolicy(QtCore.Qt.WheelFocus)
+        self._throttle_timer = QtCore.QTimer()
+        self._throttle_timer.setInterval(200)
+        self._throttle_timer.setSingleShot(True)
+        self.connect(self._throttle_timer, QtCore.SIGNAL("timeout()"), self._writeValue)
 
     def _stepBy(self, steps):
         text = str(self.text())
@@ -96,6 +100,19 @@ class MAXLineEdit (TaurusValueLineEdit):
         except:
             return None
 
+    @QtCore.pyqtSlot()
+    def _writeValue(self):
+        self.writeValue()
+
+    def throttledWrite(self, delta):
+        """Intead of writing to Tango every time the value changes, we start a
+        timer. Writes during the timer will be accumulated and when the timer
+        runs out, the last value is written.
+        """
+        TaurusValueLineEdit._stepBy(self, delta)
+        if not self._throttle_timer.isActive():
+            self._throttle_timer.start()
+
     def wheelEvent(self, evt):
         if not self.getEnableWheelEvent() or Qt.QLineEdit.isReadOnly(self):
             return Qt.QLineEdit.wheelEvent(self, evt)
@@ -114,9 +131,7 @@ class MAXLineEdit (TaurusValueLineEdit):
 
         # change the value by 1 in the least significant digit according
         # to the configured format.
-        TaurusValueLineEdit._stepBy(self, numSteps*self._wheel_delta)
-        if self._autoApply:
-            self.writeValue()
+        self.throttledWrite(numSteps*self._wheel_delta)
 
     @classmethod
     def getQtDesignerPluginInfo(cls):

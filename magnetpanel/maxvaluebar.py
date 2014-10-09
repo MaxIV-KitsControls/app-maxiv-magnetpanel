@@ -192,6 +192,11 @@ class MAXValueBar(TaurusWidget):
         TaurusWidget.__init__(self, parent, designMode=designMode)
         self._setup_ui()
 
+        self._throttle_timer = QtCore.QTimer()
+        self._throttle_timer.setInterval(200)
+        self._throttle_timer.setSingleShot(True)
+        self.connect(self._throttle_timer, QtCore.SIGNAL("timeout()"), self._writeValue)
+
         self._value = None
 
         self._acc_value = 0  # accumulate fast wheel events
@@ -246,6 +251,20 @@ class MAXValueBar(TaurusWidget):
         if digits:
             self._delta = pow(10, -digits)
 
+    @QtCore.pyqtSlot()
+    def _writeValue(self):
+        if self._value:
+            self.getModelObj().write(self._value)
+
+    def throttledWrite(self, value):
+        """Intead of writing to Tango every time the value changes, we start a
+        timer. Writes during the timer will be accumulated and when the timer
+        runs out, the last value is written.
+        """
+        self._value = value
+        if not self._throttle_timer.isActive():
+            self._throttle_timer.start()
+
     def handleEvent(self, evt_src, evt_type, evt_value):
         if evt_type in (PyTango.EventType.PERIODIC_EVENT,
                         PyTango.EventType.CHANGE_EVENT):
@@ -272,10 +291,9 @@ class MAXValueBar(TaurusWidget):
 
         # We change the value by 1 in the least significant digit according
         # to the configured format.
-        # Note: could the rate of events be too high?
         value = self.valuebar.write_value + numSteps*self._delta
-        model.write(value)
         self.valuebar.setWriteValue(value)
+        self.throttledWrite(value)
 
 
 def main():
