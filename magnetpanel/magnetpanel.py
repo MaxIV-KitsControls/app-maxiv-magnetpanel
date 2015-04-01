@@ -2,8 +2,6 @@ try:
     from collections import defaultdict
 except ImportError:
     from defaultdict import defaultdict
-from functools import partial
-import time
 from math import isnan
 
 import PyTango
@@ -19,8 +17,8 @@ from maxwidgets.display import MAXValueBar
 #from maxwidgets.panel import MAXForm
 from maxform import MAXForm
 
-from numpy import ndarray
 
+# TODO: investigate setDisconnectOnHide()? Does not seem to work as I hoped...
 
 STATE_COLORS = {
     PyTango.DevState.ON: (0, 255, 0),
@@ -64,7 +62,7 @@ class TableItem(object):
 
 class AttributeColumnsTable(TaurusWidget):
 
-    """Display several spectrum attributes belonging to the same
+    """Display several 1D spectrum attributes belonging to the same
     device as columns in a table."""
 
     trigger = QtCore.pyqtSignal(int)
@@ -115,6 +113,7 @@ class AttributeColumnsTable(TaurusWidget):
 
                 self._values = {}
                 self._config = {}
+                self._columns = []
 
                 for i, att in enumerate(self.attributes):
                     # JFF: this is a workaround for a behavior in Taurus. Just
@@ -143,12 +142,15 @@ class AttributeColumnsTable(TaurusWidget):
                     item = QtGui.QTableWidgetItem(cfg.format % value)
                 else:
                     item = QtGui.QTableWidgetItem(str(value))
-                item.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
+                item.setFlags(QtCore.Qt.ItemIsSelectable |
+                              QtCore.Qt.ItemIsEnabled)
             else:
-                item = QtGui.QTableWidgetItem("N/A")
-                item.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
+                item = QtGui.QTableWidgetItem("NaN")
+                item.setFlags(QtCore.Qt.ItemIsSelectable |
+                              QtCore.Qt.ItemIsEnabled)
                 item.setBackgroundColor(QtGui.QColor(220, 220, 220))
-            item.setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+            item.setTextAlignment(QtCore.Qt.AlignRight |
+                                  QtCore.Qt.AlignVCenter)
             self.table.setItem(row, column, item)
 
 
@@ -398,7 +400,7 @@ class ToggleButton(TaurusWidget):
 
 class PowerSupplyPanel(TaurusWidget):
 
-    attrs = ["Current", "Voltage", "Impedance"]
+    attrs = ["Current", "Voltage"]  #, "Resistance"]
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
@@ -433,6 +435,7 @@ class PowerSupplyPanel(TaurusWidget):
         form_vbox.addLayout(hbox2)
         # attributes
         self.form = MAXForm(withButtons=False)
+        # self.form.setDisconnectOnHide(True)
 
         form_vbox.addLayout(commandbox)
         form_vbox.addWidget(self.form, stretch=1)
@@ -453,6 +456,7 @@ class PowerSupplyPanel(TaurusWidget):
         slider_vbox.addWidget(self.current_label)
 
     def setModel(self, device):
+        print self.__class__.__name__, "setModel", device
         TaurusWidget.setModel(self, device)
         self.device_and_state.setModel(device)
         self.status_area.setModel(device)
@@ -497,6 +501,7 @@ class MagnetCircuitPanel(TaurusWidget):
 
         # attributes
         self.form = MAXForm(withButtons=False)
+        # self.form.setDisconnectOnHide(True)
 
         form_vbox.addWidget(self.form, stretch=1)
 
@@ -517,6 +522,7 @@ class MagnetCircuitPanel(TaurusWidget):
         slider_vbox.addWidget(self.current_label)
 
     def setModel(self, device):
+        print self.__class__.__name__, "setModel", device
         TaurusWidget.setModel(self, device)
         self.device_and_state.setModel(device)
         if device:
@@ -538,6 +544,7 @@ class MagnetCircuitPanel(TaurusWidget):
             self.form.setModel(None)
             self.valuebar.setModel(None)
             self.status_area.setModel(None)
+
 
 class CyclePanel(TaurusWidget):
 
@@ -580,6 +587,7 @@ class CyclePanel(TaurusWidget):
         self.trend_trigger.connect(self.set_trend_paused)
 
     def setModel(self, device):
+        print self.__class__.__name__, "setModel", device
         TaurusWidget.setModel(self, device)
         #self.state_button.setModel(device)
         if device:
@@ -631,18 +639,37 @@ class FieldPanel(TaurusWidget):
         label.setAlignment(QtCore.Qt.AlignCenter)
         vbox.addWidget(label)
 
-        self.table = AttributeColumnsTable()
-        vbox.addWidget(self.table)
+        # self.magnet_tabs = TaurusLazyQTabWidget(self)
+        self.magnet_tabs = QtGui.QTabWidget(self)
+        vbox.addWidget(self.magnet_tabs)
 
-    def setModel(self, device):
-        TaurusWidget.setModel(self, device)
-        if device:
-            self.table.setModel(["%s/fieldA" % device,
-                                 "%s/fieldB" % device,
-                                 "%s/fieldAnormalised" % device,
-                                 "%s/fieldBnormalised" % device])
+        self.magnet_field_tables = {}
+
+    def setModel(self, circuit):
+        TaurusWidget.setModel(self, circuit)
+        for i, (magnet, table) in enumerate(self.magnet_field_tables.items()):
+            table.setModel(None)
+            self.magnet_tabs.removeTab(i)
+        self.magnet_field_tables = {}
+        if circuit:
+            db = PyTango.Database()
+            magnets = db.get_device_property(circuit, "MagnetProxies")["MagnetProxies"]
+            models = []
+            for magnet in magnets:
+                table = AttributeColumnsTable()
+                magnet_models = ["%s/fieldA" % magnet,
+                                 "%s/fieldB" % magnet,
+                                 "%s/fieldAnormalised" % magnet,
+                                 "%s/fieldBnormalised" % magnet]
+                models.append(magnet_models)
+                table.setModel(magnet_models)
+                self.magnet_tabs.addTab(table, magnet)
+                self.magnet_field_tables[magnet] = table
+
+            self.magnet_tabs.setModel(models)
         else:
-            self.table.setModel(None)
+            self.magnet_tabs.setModel(None)
+
 
 class MagnetListPanel(TaurusWidget):
 
@@ -662,6 +689,7 @@ class MagnetListPanel(TaurusWidget):
         vbox.addWidget(self.table)
 
     def setModel(self, circuit):
+        print "MagnetListPanel setModel", circuit
         TaurusWidget.setModel(self, circuit)
         db = PyTango.Database()
         if circuit:
@@ -669,6 +697,41 @@ class MagnetListPanel(TaurusWidget):
             self.table.setModel(magnets, ["State", "TemperatureInterlock"])
         else:
             self.table.setModel(None)
+
+
+class TaurusLazyQTabWidget(QtGui.QTabWidget):
+
+    """A tabbed container for multiple Taurus widgets, which "lazily" sets
+    the models for each tab when it's first selected.
+    """
+
+    def __init__(self, parent=None):
+        super(self.__class__, self).__init__(parent)
+        self.models = []
+        self.currentChanged.connect(self._tab_changed)
+        self.current_tab = None
+
+    def setModel(self, models):
+        # In order for this to work, each tab must contain just one Taurus
+        # widget and the models argument must contain the models for these
+        # in the correct order.
+        if not models:
+            models = []
+        self.models = models
+        index = self.currentIndex()
+        tab = self.widget(index)
+        tab.setModel(self.models[index])
+
+    def _tab_changed(self, tab_index):
+        "_tab_changed", tab_index
+        if self.models:
+            tab = self.widget(tab_index)
+            if self.current_tab:
+                self.current_tab.setModel(None)
+            model = self.models[tab_index]
+            if not tab.getModel():
+                tab.setModel(model)
+            self.current_tab = tab
 
 
 class MagnetPanel(TaurusWidget):
@@ -682,7 +745,7 @@ class MagnetPanel(TaurusWidget):
         hbox = QtGui.QHBoxLayout(self)
         self.setLayout(hbox)
 
-        tabs = QtGui.QTabWidget()
+        tabs = self.tabs = TaurusLazyQTabWidget()
         hbox.addWidget(tabs)
 
         self.circuit_widget = MagnetCircuitPanel()
@@ -706,33 +769,34 @@ class MagnetPanel(TaurusWidget):
         self.resize(700, 400)
 
     def setModel(self, magnet):
-
-        TaurusWidget.setModel(self, magnet)
+        print "MagnetPanel setModel", magnet
+        #TaurusWidget.setModel(self, magnet)
         db = PyTango.Database()
-
+        print "hello"
         if magnet:
             print db.get_device_property(magnet, "CircuitProxies")
             circuit = str(db.get_device_property(
                 magnet, "CircuitProxies")["CircuitProxies"][0])
-            self.circuit_widget.setModel(circuit)
+            #self.circuit_widget.setModel(circuit)
             self.setWindowTitle(circuit)
-
+            print "hello again"
             ps = str(db.get_device_property(
                 circuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
-            self.ps_widget.setModel(ps)
+            # self.ps_widget.setModel(ps)
 
-            self.magnets_widget.setModel(circuit)
+            # self.magnets_widget.setModel(circuit)
 
-            self.cycle_widget.setModel(circuit)
+            # self.cycle_widget.setModel(circuit)
 
-            self.field_widget.setModel(circuit)
+            # self.field_widget.setModel(circuit)
+            self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
         else:
             self.circuit_widget.setModel(None)
             self.cycle_widget.setModel(None)
             self.field_widget.setModel(None)
             self.ps_widget.setModel(None)
             self.magnets_widget.setModel(None)
-            print "********* magnet DONE"
+        print "********* magnet DONE"
 
 
 def main():
