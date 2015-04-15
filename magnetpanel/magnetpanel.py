@@ -82,11 +82,13 @@ class AttributeColumnsTable(TaurusWidget):
         self.trigger.connect(self.updateColumn)
         self.attributes = []
         self._columns = []
+        self._values = {}
+        self._config = {}
 
     def setModel(self, attrs):
         if not attrs:
             for att, col in zip(self.attributes, self._columns):
-                att.removeListener(col.event_received)
+                att and att.removeListener(col.event_received)
         else:
             try:
                 TaurusWidget.setModel(self, attrs[0].rsplit("/", 1)[0])
@@ -134,6 +136,8 @@ class AttributeColumnsTable(TaurusWidget):
             self._config[column] = evt_value
 
     def updateColumn(self, column):
+        if not self._values:
+            return  # when does this happen?
         data = self._values[column]
         for row, value in enumerate(data.value):
             if not isnan(value):
@@ -161,7 +165,6 @@ class DeviceRowsTable(TaurusWidget):
 
     trigger = QtCore.pyqtSignal(int, int)
 
-
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
         self._setup_ui()
@@ -176,21 +179,26 @@ class DeviceRowsTable(TaurusWidget):
 
         self.trigger.connect(self.update_item)
         self._items = {}
+        self.attributes = {}
 
     def setModel(self, devices, attributes=[]):
         if not devices:
             for dev, attrs in self.attributes.items():
                 for att in attrs:
-                    att.removeListener(self._items[dev][att.name].event_received)
+                    att and att.removeListener(
+                        self._items[dev][att.name].event_received)
         else:
             try:
                 #TaurusWidget.setModel(self, attrs[0].rsplit("/", 1)[0])
-                attrnames = [a[0] if isinstance(a, tuple) else a for a in attributes]
+                attrnames = [a[0] if isinstance(a, tuple) else a
+                             for a in attributes]
                 self.attributes = dict((dev, [Attribute("%s/%s" % (dev, a))
-                                              for a in attrnames]) for dev in devices)
+                                              for a in attrnames])
+                                       for dev in devices)
 
                 self.table.setColumnCount(len(attributes) + 1)
-                colnames = [a[1] if isinstance(a, tuple) else a for a in attributes]
+                colnames = [a[1] if isinstance(a, tuple) else a
+                            for a in attributes]
                 labels = ["Device"] + colnames
                 self.table.setHorizontalHeaderLabels(labels)
                 header = self.table.horizontalHeader()
@@ -204,6 +212,8 @@ class DeviceRowsTable(TaurusWidget):
 
                 for r, (dev, attrs) in enumerate(self.attributes.items()):
                     item = QtGui.QTableWidgetItem(dev)
+                    item.setFlags(QtCore.Qt.ItemIsSelectable |
+                                  QtCore.Qt.ItemIsEnabled)
                     self.table.setItem(r, 0, item)
                     self._items[dev] = {}
                     for c, att in enumerate(attrs):
@@ -211,7 +221,7 @@ class DeviceRowsTable(TaurusWidget):
                         # adding a new listener to each attribute does not work, the
                         # previous ones get removed for some reason.
                         titem = TableItem(self, r, c+1)
-                        self._items[dev][att.name] = titem  # keep xreference to prevent GC
+                        self._items[dev][att.name] = titem  # keep reference to prevent GC
                         att.addListener(titem.event_received)
 
             except PyTango.DevFailed:
@@ -283,9 +293,6 @@ class DevnameAndState(TaurusWidget):
             self.state_label.setModel(None)
 
 
-#class DevnameAndStatePl
-
-
 class StatusArea(TaurusWidget):
 
     """A (scrolling) text area that displays device status, or any other
@@ -323,7 +330,7 @@ class StatusArea(TaurusWidget):
                 self.status = Attribute(model)
             self.status.addListener(self.onStatusChange)
         else:
-            self.status.removeListener(self.onStatusChange)
+            self.status and self.status.removeListener(self.onStatusChange)
 
     def onStatusChange(self, evt_src, evt_type, evt_value):
         if evt_type in [PyTango.EventType.CHANGE_EVENT,
@@ -400,7 +407,7 @@ class ToggleButton(TaurusWidget):
 
 class PowerSupplyPanel(TaurusWidget):
 
-    attrs = ["Current", "Voltage"]  #, "Resistance"]
+    attrs = ["Current", "Voltage", "Resistance"]
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
@@ -424,8 +431,11 @@ class PowerSupplyPanel(TaurusWidget):
         self.start_button.setUseParentModel(True)
         self.stop_button = TaurusCommandButton(command="Off")
         self.stop_button.setUseParentModel(True)
+        self.init_button = TaurusCommandButton(command="Init")
+        self.init_button.setUseParentModel(True)
         commandbox.addWidget(self.start_button)
         commandbox.addWidget(self.stop_button)
+        commandbox.addWidget(self.init_button)
         # self.state_button = ToggleButton(down_command="Start",
         #                                  up_command="Stop",
         #                                  state=PyTango.DevState.ON)
@@ -586,6 +596,8 @@ class CyclePanel(TaurusWidget):
         vbox.addWidget(self.trend, stretch=1)
         self.trend_trigger.connect(self.set_trend_paused)
 
+        self.cyclingState = None
+
     def setModel(self, device):
         print self.__class__.__name__, "setModel", device
         TaurusWidget.setModel(self, device)
@@ -647,9 +659,11 @@ class FieldPanel(TaurusWidget):
 
     def setModel(self, circuit):
         TaurusWidget.setModel(self, circuit)
-        for i, (magnet, table) in enumerate(self.magnet_field_tables.items()):
-            table.setModel(None)
-            self.magnet_tabs.removeTab(i)
+        if circuit is None:
+            for i, table in self.magnet_field_tables.values():
+                table.setModel(None)
+            self.magnet_tabs.clear()
+            return
         self.magnet_field_tables = {}
         if circuit:
             db = PyTango.Database()
@@ -663,12 +677,12 @@ class FieldPanel(TaurusWidget):
                                  "%s/fieldBnormalised" % magnet]
                 models.append(magnet_models)
                 table.setModel(magnet_models)
-                self.magnet_tabs.addTab(table, magnet)
-                self.magnet_field_tables[magnet] = table
-
-            self.magnet_tabs.setModel(models)
-        else:
-            self.magnet_tabs.setModel(None)
+                index = self.magnet_tabs.addTab(table, magnet)
+                self.magnet_field_tables[magnet] = (index, table)
+                print "addTab", index
+            #self.magnet_tabs.setModel(models)
+        #else:
+            #self.magnet_tabs.setModel(None)
 
 
 class MagnetListPanel(TaurusWidget):
@@ -715,23 +729,26 @@ class TaurusLazyQTabWidget(QtGui.QTabWidget):
         # In order for this to work, each tab must contain just one Taurus
         # widget and the models argument must contain the models for these
         # in the correct order.
-        if not models:
-            models = []
-        self.models = models
         index = self.currentIndex()
         tab = self.widget(index)
-        tab.setModel(self.models[index])
+        if not models:
+            self.models = []
+            tab.setModel(None)
+        else:
+            self.models = models
+            tab.setModel(self.models[index])
 
     def _tab_changed(self, tab_index):
         "_tab_changed", tab_index
         if self.models:
             tab = self.widget(tab_index)
-            if self.current_tab:
-                self.current_tab.setModel(None)
-            model = self.models[tab_index]
-            if not tab.getModel():
-                tab.setModel(model)
-            self.current_tab = tab
+            if tab:
+                if self.current_tab and self.current_tab.getModel():
+                    self.current_tab.setModel(None)
+                model = self.models[tab_index]
+                if not tab.getModel():
+                    tab.setModel(model)
+                self.current_tab = tab
 
 
 class MagnetPanel(TaurusWidget):
@@ -770,7 +787,7 @@ class MagnetPanel(TaurusWidget):
 
     def setModel(self, magnet):
         print "MagnetPanel setModel", magnet
-        #TaurusWidget.setModel(self, magnet)
+        TaurusWidget.setModel(self, magnet)
         db = PyTango.Database()
         print "hello"
         if magnet:
