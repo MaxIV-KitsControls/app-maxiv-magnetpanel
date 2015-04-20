@@ -25,6 +25,8 @@ from widgets import (AttributeColumnsTable, DeviceRowsTable,
 
 class PowerSupplyPanel(TaurusWidget):
 
+    "Allows directly controlling the power supply connected to the circuit"
+
     attrs = ["Current", "Voltage", "Resistance"]
 
     def __init__(self, parent=None):
@@ -39,11 +41,12 @@ class PowerSupplyPanel(TaurusWidget):
         form_vbox = QtGui.QVBoxLayout(self)
         # devicename label
 
-        hbox2 = QtGui.QHBoxLayout(self)
+        hbox2 = QtGui.QVBoxLayout(self)
         self.device_and_state = DevnameAndState(self)
         hbox2.addWidget(self.device_and_state, stretch=2)
 
         # commands
+
         commandbox = QtGui.QHBoxLayout(self)
         self.start_button = TaurusCommandButton(command="On")
         self.start_button.setUseParentModel(True)
@@ -105,6 +108,8 @@ class PowerSupplyPanel(TaurusWidget):
 
 class MagnetCircuitPanel(TaurusWidget):
 
+    "Displays the important attributes of the circuit device"
+
     attrs = ["energy", "MainFieldComponent", "currentActual", "currentSet",
              "fixNormFieldOnEnergyChange"]
 
@@ -119,7 +124,7 @@ class MagnetCircuitPanel(TaurusWidget):
 
         form_vbox = QtGui.QVBoxLayout(self)
 
-        hbox2 = QtGui.QHBoxLayout(self)
+        hbox2 = QtGui.QVBoxLayout(self)
         self.device_and_state = DevnameAndState(self)
         hbox2.addWidget(self.device_and_state)
         self.magnet_type_label = QtGui.QLabel("Magnet type:")
@@ -176,6 +181,8 @@ class MagnetCircuitPanel(TaurusWidget):
 
 class CyclePanel(TaurusWidget):
 
+    "Panel for controlling the cycling functionality"
+
     trend_trigger = QtCore.pyqtSignal(bool)
 
     def __init__(self, parent=None):
@@ -194,7 +201,7 @@ class CyclePanel(TaurusWidget):
         # policy.setVerticalPolicy(QtGui.QSizePolicy.Fixed)
         # self.status_label.setSizePolicy(policy)
 
-        commandbox = QtGui.QHBoxLayout(self)
+        commandbox = QtGui.QVBoxLayout(self)
         # self.state_button = ToggleButton(down_command="StartCycle",
         #                                  up_command="StopCycle",
         #                                  state=PyTango.DevState.RUNNING)
@@ -257,6 +264,9 @@ class CyclePanel(TaurusWidget):
 
 class FieldPanel(TaurusWidget):
 
+    """Shows the field components for one of the magnets in the circuit in
+    a table. The user can select which magnet using a dropdown."""
+
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
         self._setup_ui()
@@ -265,46 +275,46 @@ class FieldPanel(TaurusWidget):
         vbox = QtGui.QVBoxLayout(self)
         self.setLayout(vbox)
 
-        label = QtGui.QLabel("Average field components, un-normalised and normalised")
+        hbox = QtGui.QHBoxLayout(self)
+        label = QtGui.QLabel("Average field components", parent=self)
         label.setAlignment(QtCore.Qt.AlignCenter)
-        vbox.addWidget(label)
+        hbox.addWidget(label)
 
-        # self.magnet_tabs = TaurusLazyQTabWidget(self)
-        self.magnet_tabs = QtGui.QTabWidget(self)
-        vbox.addWidget(self.magnet_tabs)
+        # the dropdown to select which magnet's fields to show
+        self.magnet_combobox = QtGui.QComboBox(parent=self)
+        self.magnet_combobox.currentIndexChanged.connect(self._magnet_selected)
+        hbox.addWidget(self.magnet_combobox)
+        vbox.addLayout(hbox)
 
-        self.magnet_field_tables = {}
+        # the actual field table for the chosen magnet
+        self.table = AttributeColumnsTable(parent=self)
+        vbox.addWidget(self.table)
 
-    def setModel(self, circuit):
+    @QtCore.pyqtSlot(str)
+    def _magnet_selected(self, i):
+        magnet = self.magnet_combobox.itemText(i)
+        if magnet:
+            magnet_models = ["%s/fieldA" % magnet,
+                             "%s/fieldB" % magnet,
+                             "%s/fieldAnormalised" % magnet,
+                             "%s/fieldBnormalised" % magnet]
+            self.table.setModel(magnet_models)
+
+    def setModel(self, circuit, magnet=None):
         TaurusWidget.setModel(self, circuit)
         if circuit is None:
-            for i, table in self.magnet_field_tables.values():
-                table.setModel(None)
-            self.magnet_tabs.clear()
-            return
-        self.magnet_field_tables = {}
-        if circuit:
+            self.magnet_combobox.clear()
+            self.table.setModel(None)
+        else:
             db = PyTango.Database()
             magnets = db.get_device_property(circuit, "MagnetProxies")["MagnetProxies"]
-            models = []
-            for magnet in magnets:
-                table = AttributeColumnsTable()
-                magnet_models = ["%s/fieldA" % magnet,
-                                 "%s/fieldB" % magnet,
-                                 "%s/fieldAnormalised" % magnet,
-                                 "%s/fieldBnormalised" % magnet]
-                models.append(magnet_models)
-                table.setModel(magnet_models)
-                index = self.magnet_tabs.addTab(table, magnet)
-                self.magnet_field_tables[magnet] = (index, table)
-                print "addTab", index
-            #self.magnet_tabs.setModel(models)
-        #else:
-            #self.magnet_tabs.setModel(None)
+            self.magnet_combobox.addItems(magnets)
 
 
 class MagnetListPanel(TaurusWidget):
 
+    "Shows all magnets in the circuit, with state and interlocks, in a table"
+
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
         self._setup_ui()
@@ -313,7 +323,7 @@ class MagnetListPanel(TaurusWidget):
         vbox = QtGui.QVBoxLayout(self)
         self.setLayout(vbox)
 
-        label = QtGui.QLabel("All magnets in the circuit.")
+        label = QtGui.QLabel("All magnets in the circuit")
         label.setAlignment(QtCore.Qt.AlignCenter)
         vbox.addWidget(label)
 
@@ -332,6 +342,9 @@ class MagnetListPanel(TaurusWidget):
 
 
 class MagnetPanel(TaurusWidget):
+
+    """This is the main panel that collects all the specific widgets above
+    into tabs."""
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
@@ -363,7 +376,7 @@ class MagnetPanel(TaurusWidget):
         # make the PS tab default for now...
         tabs.setCurrentIndex(self.ps_tab)
 
-        self.resize(700, 400)
+        self.resize(700, 450)
 
     def setModel(self, magnet):
         print "MagnetPanel setModel", magnet
@@ -371,12 +384,10 @@ class MagnetPanel(TaurusWidget):
         db = PyTango.Database()
         print "hello"
         if magnet:
-            print db.get_device_property(magnet, "CircuitProxies")
             circuit = str(db.get_device_property(
                 magnet, "CircuitProxies")["CircuitProxies"][0])
             #self.circuit_widget.setModel(circuit)
-            self.setWindowTitle(circuit)
-            print "hello again"
+            self.setWindowTitle("Magnet circuit panel: %s" % circuit)
             ps = str(db.get_device_property(
                 circuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
             # self.ps_widget.setModel(ps)
@@ -393,6 +404,61 @@ class MagnetPanel(TaurusWidget):
             self.field_widget.setModel(None)
             self.ps_widget.setModel(None)
             self.magnets_widget.setModel(None)
+        print "********* magnet DONE"
+
+
+class TrimCoilCircuitPanel(TaurusWidget):
+
+    def __init__(self, parent=None):
+        TaurusWidget.__init__(self, parent)
+        self._setup_ui()
+
+    def _setup_ui(self):
+
+        hbox = QtGui.QHBoxLayout(self)
+        self.setLayout(hbox)
+
+        tabs = self.tabs = TaurusLazyQTabWidget()
+        hbox.addWidget(tabs)
+
+        self.circuit_widget = MagnetCircuitPanel()
+        self.circuit_tab = tabs.addTab(self.circuit_widget, "Circuit")
+
+        self.ps_widget = PowerSupplyPanel()
+        self.ps_tab = tabs.addTab(self.ps_widget, "Power supply")
+
+        self.magnets_widget = MagnetListPanel()
+        self.magnets_tab = tabs.addTab(self.magnets_widget, "Magnets")
+
+        self.field_widget = FieldPanel()
+        self.field_tab = tabs.addTab(self.field_widget, "Field")
+
+        self.switchboard_widget = SwitchBoardPanel()
+        self.switchboard_tab = tabs.addTab(self.switchboard_widget, "Switchboard")
+
+        # make the PS tab default for now...
+        tabs.setCurrentIndex(self.ps_tab)
+
+        self.resize(700, 400)
+
+    def setModel(self, trimcircuit):
+        TaurusWidget.setModel(self, trimcircuit)
+        db = PyTango.Database()
+        if trimcircuit:
+            self.setWindowTitle("Trim coil panel: %s" % trimcircuit)
+            swb = str(db.get_device_property(
+                trimcircuit, "SwitchboardProxy")["SwitchboardProxy"][0])
+            ps = str(db.get_device_property(
+                trimcircuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
+            self.tabs.setModel([trimcircuit, ps, trimcircuit, trimcircuit, swb])
+        else:
+            self.setWindowTitle("N/A")
+            self.circuit_widget.setModel(None)
+            # self.cycle_widget.setModel(None)
+            self.field_widget.setModel(None)
+            self.ps_widget.setModel(None)
+            self.magnets_widget.setModel(None)
+            self.switchboard_widget.setModel(None)
         print "********* magnet DONE"
 
 

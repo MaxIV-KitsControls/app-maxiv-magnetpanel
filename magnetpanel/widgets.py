@@ -405,12 +405,12 @@ class TaurusLazyQTabWidget(QtGui.QTabWidget):
         super(self.__class__, self).__init__(parent)
         self.models = []
         self.currentChanged.connect(self._tab_changed)
-        self.current_tab = None
+        #self.current_tab = None
 
     def setModel(self, models):
         # In order for this to work, each tab must contain just one Taurus
         # widget and the models argument must contain the models for these
-        # in the correct order.
+        # in the same order as the tabs.
         index = self.currentIndex()
         tab = self.widget(index)
         if not models:
@@ -421,13 +421,14 @@ class TaurusLazyQTabWidget(QtGui.QTabWidget):
             tab.setModel(self.models[index])
 
     def _tab_changed(self, tab_index):
-        "_tab_changed", tab_index
+        """Callback for when the user swiches tabs. Sets the model on the new
+        tab and unsets it on the old."""
         if self.models:
             tab = self.widget(tab_index)
             if tab:
-                if self.current_tab and self.current_tab.getModel():
-                    self.current_tab.setModel(None)
+                # if self.current_tab and self.current_tab.getModel():
+                #     self.current_tab.setModel(None)
                 model = self.models[tab_index]
                 if not tab.getModel():
                     tab.setModel(model)
-                self.current_tab = tab
+                #self.current_tab = tab
