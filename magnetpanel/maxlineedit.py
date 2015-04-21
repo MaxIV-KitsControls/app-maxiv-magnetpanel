@@ -1,6 +1,8 @@
 import taurus
+from taurus.external.qt import Qt, QtCore, QtGui
 from taurus.qt.qtgui.input import TaurusValueLineEdit
-from taurus.qt import QtCore, Qt
+from taurus.qt.qtgui.panel import TaurusWidget
+
 import PyTango
 
 
@@ -34,8 +36,11 @@ class MAXLineEdit (TaurusValueLineEdit):
         self.connect(self._throttle_timer, QtCore.SIGNAL("timeout()"), self._writeValue)
 
     def _stepBy(self, steps):
-        text = str(self.text())
 
+        """try to figure out which digit the cursor is at, and step by one in
+        that digit."""
+
+        text = str(self.text())
         cursor = len(text) - self.cursorPosition()
 
         if '.' not in self.text():
@@ -57,7 +62,7 @@ class MAXLineEdit (TaurusValueLineEdit):
         TaurusValueLineEdit._stepBy(self, steps*delta)
         self.setCursorPosition(len(self.text()) - cursor)
         if self._autoApply:
-            self.writeValue()
+            self.writeValue()  # this seems a but risky...
 
     def focusInEvent(self, event):
         self._focus = True
@@ -83,10 +88,9 @@ class MAXLineEdit (TaurusValueLineEdit):
                 self._updateWriteValue(evt_value.w_value)
         elif evt_type in (PyTango.EventType.ATTR_CONF_EVENT,
                           PyTango.EventType.QUALITY_EVENT):
-                #taurus.core.taurusbasetypes.TaurusEventType.Config:
             # update the wheel delta to correspond to the LSD
             digits = self._decimalDigits(evt_value.format)
-            if digits:
+            if digits is not None:
                 self._wheel_delta = pow(10, -digits)
 
     def _decimalDigits(self, fmt):
@@ -136,6 +140,17 @@ class MAXLineEdit (TaurusValueLineEdit):
     @classmethod
     def getQtDesignerPluginInfo(cls):
         ret = TaurusValueLineEdit.getQtDesignerPluginInfo()
-        ret['group']  = 'MAX-lab Taurus Widgets'
+        ret['group'] = 'MAX-lab Taurus Widgets'
         ret['module'] = 'maxwidgets.input'
         return ret
+
+
+class ResettableMAXLineEdit(TaurusWidget):
+
+    def __init__(self, parent=None):
+        TaurusWidget.__init__(self, parent)
+        vbox = QtGui.QVBox(layout=self)
+        self.lineedit = MAXLineEdit(parent=vbox)
+
+    def __getattr__(self, attr):
+        return getattr(self.lineedit, attr)

@@ -1,7 +1,7 @@
 from taurus.qt.qtgui.panel import TaurusForm
 from taurus.qt.qtgui.input import TaurusValueLineEdit
 #from maxwidgets.input import MAXLineEdit
-from maxlineedit import MAXLineEdit
+from maxlineedit import MAXLineEdit, ResettableMAXLineEdit
 
 
 class MAXForm(TaurusForm):
@@ -29,7 +29,7 @@ class MAXForm(TaurusForm):
         for widget in self:
             if isinstance(widget.writeWidget(), TaurusValueLineEdit):
                 widget.writeWidgetClass = MAXLineEdit
-                widget.writeWidget().setAutoApply(True)
+                #widget.writeWidget().setAutoApply(True)  # this causes issues
                 widget.writeWidget().setForcedApply(True)
                 widget.writeWidget().setEnableWheelEvent(True)
 
