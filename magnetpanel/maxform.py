@@ -1,7 +1,9 @@
-from taurus.qt.qtgui.panel import TaurusForm
+from maxlineedit import MAXLineEdit
+
 from taurus.qt.qtgui.input import TaurusValueLineEdit
-#from maxwidgets.input import MAXLineEdit
-from maxlineedit import MAXLineEdit, ResettableMAXLineEdit
+from taurus.qt.qtgui.panel import TaurusForm
+
+from resettable import ResettableTaurusValue
 
 
 class MAXForm(TaurusForm):
@@ -14,22 +16,24 @@ class MAXForm(TaurusForm):
     widgetMap = {'GammaSPCe': ('maxwidgets.panel.GammaSPCeTV', (), {})}
 
     def __init__(self, *args, **kwargs):
+
         if 'withButtons' not in kwargs:
             kwargs['withButtons'] = False
 
         TaurusForm.__init__(self, *args, **kwargs)
+        self._defaultFormWidget = ResettableTaurusValue
         self.setModifiableByUser(True)
         self.setCustomWidgetMap(self.widgetMap)
+        self._useResetButton = True
 
     def setModel(self, model):
-
         TaurusForm.setModel(self, model)
 
         # a hack to replace taurus lineedit widgets with ours...
         for widget in self:
             if isinstance(widget.writeWidget(), TaurusValueLineEdit):
                 widget.writeWidgetClass = MAXLineEdit
-                #widget.writeWidget().setAutoApply(True)  # this causes issues
+                # widget.writeWidget().setAutoApply(True)  # this causes issues
                 widget.writeWidget().setForcedApply(True)
                 widget.writeWidget().setEnableWheelEvent(True)
 
