@@ -144,6 +144,9 @@ class MAXLineEdit (TaurusValueLineEdit):
         ret['module'] = 'maxwidgets.input'
         return ret
 
+    def resetInitialValue(self):
+        pass
+
 
 class ResettableMAXLineEdit(TaurusWidget):
 
