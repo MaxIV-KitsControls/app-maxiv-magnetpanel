@@ -1,5 +1,7 @@
 from taurus.external.qt.QtCore import QSize
+from taurus.external.qt import QtCore
 from taurus.external.qt.QtGui import QIcon, QPushButton, QWidget
+from taurus.external.qt import Qt
 from taurus.qt.qtgui.panel import TaurusValue
 
 
@@ -9,26 +11,23 @@ class ResettableTaurusValue(TaurusValue):
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
-        self._initialWriteValue = None
+        self._storedValue = None
 
-    def _storeInitialWriteValue(self):
-        "Keep the write-value from when the widget is created"
+    def storeCurrentValue(self):
+        "Keep the attribute value from when the widget is created"
         attr = self.getModelValueObj()
-        self._initialWriteValue = attr.w_value
+        self._storedValue = attr.w_value
 
-    def resetInitialWriteValue(self):
-        # model = self.getModelObj()
-        # model.write(self._initialWriteValue)
-
-        # The above is a bit dangeous... let's just update the local value
-        # and require the user to press enter etc to apply the change.
-        self.writeWidget().setValue(self._initialWriteValue)
+    def resetToStoredValue(self):
+        model = self.getModelObj()
+        model.write(self._storedValue)
+        self.writeWidget().setValue(self._storedValue)
         self.writeWidget().setFocus()
 
     def setModel(self, model):
         super(self.__class__, self).setModel(model)
         model = self.getModelObj()
-        self._storeInitialWriteValue()
+        self.storeCurrentValue()
         if model.isReadWrite():
             self.extraWidgetClass = ValueResetButton
 
@@ -48,7 +47,9 @@ class DummyExtraWidget(QWidget):
 
 class ValueResetButton(QPushButton):
 
-    "A button to reset a write-value"
+    "A button to store/reset a write-value"
+
+    # TODO: right-click to store value
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
@@ -58,22 +59,32 @@ class ValueResetButton(QPushButton):
         # print icon.availableSizes()
         self.setFixedSize(QSize(25, 25))
 
-        self.clicked.connect(self._clicked)
+    def mousePressEvent(self, event):
+        button = event.button()
+        if button == QtCore.Qt.LeftButton:
+            # left button restores stored value
+            self.taurusValueBuddy().resetToStoredValue()
+        elif button == QtCore.Qt.RightButton:
+            # right button stores the current value
+            self.taurusValueBuddy().storeCurrentValue()
+            self.setModel(None)
 
-    def _clicked(self, event):
-        self.taurusValueBuddy().resetInitialWriteValue()
+    def contextMenuEvent(self, event):
+        pass  # we override to remove the context menu
 
     def setModel(self, model):
         # This is a bit of a hack, as this is not really a
         # TaurusWidget.  But we need wait for the model to be set
         # before we can access the initial value.
-        value = self.taurusValueBuddy()._initialWriteValue
+        self._update_tooltip()
+
+    def _update_tooltip(self):
+        value = self.taurusValueBuddy()._storedValue
         attr = self.taurusValueBuddy().getModelObj()
         fmt = attr.format if attr.format != "Not specified" else None
         unit = attr.unit if attr.unit != "No unit" else ""
-        print attr, value, fmt, unit
         if fmt:
-            tooltip = ('Reset to initial value: %s %s' % (fmt, unit)) % value
+            tooltip = ('Reset to value: <b>%s %s</b>' % (fmt, unit)) % value
         else:
-            tooltip = 'Reset to initial value: %s %s' % (value, unit)
-        self.setToolTip(tooltip)
+            tooltip = 'Reset to value: <b>%s %s</b>' % (value, unit)
+        self.setToolTip(tooltip + "<p>(Right-click to store)")
