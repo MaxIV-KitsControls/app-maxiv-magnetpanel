@@ -16,6 +16,7 @@ from maxwidgets.display import MAXValueBar
 #from maxvaluebar import MAXValueBar
 #from maxwidgets.panel import MAXForm
 from maxform import MAXForm
+from switchboard import SwitchBoardPanel
 from widgets import (AttributeColumnsTable, DeviceRowsTable,
                      DevnameAndState, StatusArea, TaurusLazyQTabWidget)
 

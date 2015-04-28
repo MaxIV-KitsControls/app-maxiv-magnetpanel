@@ -1,0 +1,16 @@
+<RCC>
+  <qresource>
+    <file>sextupole/all_off.svg</file>
+    <file>sextupole/horizontal_steerer.svg</file>
+    <file>sextupole/quadrupole.svg</file>
+    <file>sextupole/sextupole.svg</file>
+    <file>sextupole/skew_quadrupole.svg</file>
+    <file>sextupole/vertical_steerer.svg</file>
+    <file>octupole/all_off.svg</file>
+    <file>octupole/horizontal_steerer.svg</file>
+    <file>octupole/quadrupole.svg</file>
+    <file>octupole/skew_quadrupole.svg</file>
+    <file>octupole/vertical_steerer.svg</file>
+    <file>unknown.svg</file>
+  </qresource>
+</RCC>
