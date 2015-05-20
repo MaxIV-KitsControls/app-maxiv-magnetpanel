@@ -48,6 +48,7 @@ class AttributeColumnsTable(TaurusWidget):
         self.setLayout(hbox)
 
         self.table = QtGui.QTableWidget()
+        self.table.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
 
         hbox.addWidget(self.table)
 
@@ -98,6 +99,22 @@ class AttributeColumnsTable(TaurusWidget):
                     att.addListener(col.event_received)
             except PyTango.DevFailed:
                 pass
+
+    def keyPressEvent(self, e):
+        "Copy selected cells to the clipboard on Ctrl+C"
+        if (e.modifiers() & QtCore.Qt.ControlModifier):
+            selected = self.table.selectedRanges()
+            if e.key() == QtCore.Qt.Key_C:
+                s = ""
+                for r in xrange(selected[0].topRow(), selected[0].bottomRow() + 1):
+                    for c in xrange(selected[0].leftColumn(), selected[0].rightColumn() + 1):
+                        try:
+                            s += str(self.table.item(r, c).text()) + "\t"
+                        except AttributeError:
+                            s += "\t"
+                    s = s[:-1] + "\n"  # eliminate last '\t'
+                clipboard = QtGui.QApplication.clipboard()
+                clipboard.setText(s)
 
     def onEvent(self, column, evt_src, evt_type, evt_value):
         if evt_type in [PyTango.EventType.CHANGE_EVENT,
@@ -163,13 +180,29 @@ class DeviceRowsTable(TaurusWidget):
         hbox = QtGui.QHBoxLayout(self)
         self.setLayout(hbox)
 
-        self.table = QtGui.QTableWidget()
+        self.table = QtGui.QTableWidget(parent=self)
 
         hbox.addWidget(self.table)
 
         self.trigger.connect(self.update_item)
         self._items = {}
         self.attributes = {}
+
+    def keyPressEvent(self, e):
+        "Copy selected cells to the clipboard on Ctrl+C"
+        if (e.modifiers() & QtCore.Qt.ControlModifier):
+            selected = self.table.selectedRanges()
+            if e.key() == QtCore.Qt.Key_C:
+                s = ""
+                for r in xrange(selected[0].topRow(), selected[0].bottomRow() + 1):
+                    for c in xrange(selected[0].leftColumn(), selected[0].rightColumn() + 1):
+                        try:
+                            s += str(self.table.item(r, c).text()) + "\t"
+                        except AttributeError:
+                            s += "\t"
+                    s = s[:-1] + "\n"  # eliminate last '\t'
+                clipboard = QtGui.QApplication.clipboard()
+                clipboard.setText(s)
 
     def setModel(self, devices, attributes=[]):
         if not devices:
