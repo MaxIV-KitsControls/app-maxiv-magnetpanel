@@ -277,7 +277,7 @@ class FieldPanel(TaurusWidget):
         self.setLayout(vbox)
 
         hbox = QtGui.QHBoxLayout(self)
-        label = QtGui.QLabel("Average field components", parent=self)
+        label = QtGui.QLabel("Magnetic field components", parent=self)
         label.setAlignment(QtCore.Qt.AlignCenter)
         hbox.addWidget(label)
 
@@ -383,7 +383,6 @@ class MagnetPanel(TaurusWidget):
         print "MagnetPanel setModel", magnet
         TaurusWidget.setModel(self, magnet)
         db = PyTango.Database()
-        print "hello"
         if magnet:
             circuit = str(db.get_device_property(
                 magnet, "CircuitProxies")["CircuitProxies"][0])
@@ -448,7 +447,7 @@ class TrimCoilCircuitPanel(TaurusWidget):
         if trimcircuit:
             self.setWindowTitle("Trim coil panel: %s" % trimcircuit)
             swb = str(db.get_device_property(
-                trimcircuit, "SwitchboardProxy")["SwitchboardProxy"][0])
+                trimcircuit, "SwitchBoardProxy")["SwitchBoardProxy"][0])
             ps = str(db.get_device_property(
                 trimcircuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
             self.tabs.setModel([trimcircuit, ps, trimcircuit, trimcircuit, swb])
@@ -460,7 +459,6 @@ class TrimCoilCircuitPanel(TaurusWidget):
             self.ps_widget.setModel(None)
             self.magnets_widget.setModel(None)
             self.switchboard_widget.setModel(None)
-        print "********* magnet DONE"
 
 
 def magnet_main():
@@ -471,6 +469,7 @@ def magnet_main():
     args = app.get_command_line_args()
 
     w = MagnetPanel()
+    # w = TrimCoilCircuitPanel()
 
     if len(args) > 0:
         w.setModel(args[0])
