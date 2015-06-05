@@ -1,1 +1,2 @@
-from magnetpanel import MagnetPanel
+from magnetpanel import MagnetPanel, TrimCoilCircuitPanel
+
