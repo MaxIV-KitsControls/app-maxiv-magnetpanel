@@ -463,15 +463,30 @@ class TrimCoilCircuitPanel(TaurusWidget):
         print "********* magnet DONE"
 
 
-def main():
+def magnet_main():
     from taurus.qt.qtgui.application import TaurusApplication
     import sys
 
     app = TaurusApplication(sys.argv)
     args = app.get_command_line_args()
 
-    #w = PowerSupply()
     w = MagnetPanel()
+
+    if len(args) > 0:
+        w.setModel(args[0])
+    app.setCursorFlashTime(0)
+
+    w.show()
+    sys.exit(app.exec_())
+
+def trimcoil_main():
+    from taurus.qt.qtgui.application import TaurusApplication
+    import sys
+
+    app = TaurusApplication(sys.argv)
+    args = app.get_command_line_args()
+
+    w = TrimCoilCircuitPanel()
 
     if len(args) > 0:
         w.setModel(args[0])
@@ -482,4 +497,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    magnet_main()

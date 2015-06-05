@@ -12,5 +12,6 @@ setup(
     url="http://www.maxlab.lu.se",
     include_package_data=True,
     packages=find_packages(),
-    scripts=["scripts/ctmagnet"]
+    scripts=["scripts/ctmagnet",
+             "scripts/cttrimcoil"]
 )
