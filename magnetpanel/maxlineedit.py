@@ -26,6 +26,7 @@ class MAXLineEdit (TaurusValueLineEdit):
 
     _focus = False
     _wheel_delta = 1
+    w_value_trigger = QtCore.pyqtSignal()
 
     def __init__(self, parent=None, designMode=False):
         TaurusValueLineEdit.__init__(self, parent, designMode)
@@ -34,6 +35,7 @@ class MAXLineEdit (TaurusValueLineEdit):
         self._throttle_timer.setInterval(200)
         self._throttle_timer.setSingleShot(True)
         self.connect(self._throttle_timer, QtCore.SIGNAL("timeout()"), self._writeValue)
+        self.w_value_trigger.connect(self._updateWriteValue)
 
     def _stepBy(self, steps):
 
@@ -73,9 +75,9 @@ class MAXLineEdit (TaurusValueLineEdit):
         self.resetPendingOperations()  # discard unwritten changes (safer?)
         TaurusValueLineEdit.focusOutEvent(self, event)
 
-    def _updateWriteValue(self, value):
+    def _updateWriteValue(self):
         cursor_position = self.cursorPosition()
-        self.setValue(value)
+        self.setValue(self._w_value)
         self.setCursorPosition(cursor_position)
 
     def handleEvent(self, evt_src, evt_type, evt_value):
@@ -85,7 +87,8 @@ class MAXLineEdit (TaurusValueLineEdit):
                         # taurus.core.taurusbasetypes.TaurusEventType.Periodic,
                         # taurus.core.taurusbasetypes.TaurusEventType.Change):
             if not self._focus:
-                self._updateWriteValue(evt_value.w_value)
+                self._w_value = evt_value.w_value
+                self.w_value_trigger.emit()
         elif evt_type in (PyTango.EventType.ATTR_CONF_EVENT,
                           PyTango.EventType.QUALITY_EVENT):
             # update the wheel delta to correspond to the LSD
