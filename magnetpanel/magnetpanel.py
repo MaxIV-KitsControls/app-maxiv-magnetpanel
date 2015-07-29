@@ -2,7 +2,6 @@ try:
     from collections import defaultdict
 except ImportError:
     from defaultdict import defaultdict
-from math import isnan
 
 import sys
 import PyTango
@@ -10,29 +9,23 @@ import PyTango
 from taurus.qt import QtCore, QtGui
 from taurus import Attribute
 
-from taurus.qt.qtgui.panel import TaurusWidget, TaurusForm
-from taurus.qt.qtgui.display import TaurusLabel, TaurusLed, TaurusLabel
+from taurus.qt.qtgui.panel import TaurusWidget
+from taurus.qt.qtgui.display import TaurusLabel
 from taurus.qt.qtgui.button import TaurusCommandButton
 from taurus.qt.qtgui.plot import TaurusTrend
 from maxwidgets.display import MAXValueBar
-# from maxvaluebar import MAXValueBar
-# from maxwidgets.panel import MAXForm
 from maxform import MAXForm
 from switchboard import SwitchBoardPanel
 from widgets import (AttributeColumnsTable, DeviceRowsTable,
                      DevnameAndState, StatusArea, TaurusLazyQTabWidget)
-
 
 PERIOD_ARG = "--taurus-polling-period="
 
 # TODO: investigate setDisconnectOnHide()? Does not seem to work as I hoped...
 
 
-
-
 class PowerSupplyPanel(TaurusWidget):
     "Allows directly controlling the power supply connected to the circuit"
-
     attrs = ["Current", "Voltage", "Resistance"]
 
     def __init__(self, parent=None):
@@ -40,19 +33,16 @@ class PowerSupplyPanel(TaurusWidget):
         self._setup_ui()
 
     def _setup_ui(self):
-
         hbox = QtGui.QHBoxLayout(self)
         self.setLayout(hbox)
-
         form_vbox = QtGui.QVBoxLayout(self)
-        # devicename label
 
+        # devicename label
         hbox2 = QtGui.QVBoxLayout(self)
         self.device_and_state = DevnameAndState(self)
         hbox2.addWidget(self.device_and_state, stretch=2)
 
         # commands
-
         commandbox = QtGui.QHBoxLayout(self)
         self.start_button = TaurusCommandButton(command="On")
         self.start_button.setUseParentModel(True)
@@ -63,23 +53,16 @@ class PowerSupplyPanel(TaurusWidget):
         commandbox.addWidget(self.start_button)
         commandbox.addWidget(self.stop_button)
         commandbox.addWidget(self.init_button)
-        # self.state_button = ToggleButton(down_command="Start",
-        #                                  up_command="Stop",
-        #                                  state=PyTango.DevState.ON)
-        # commandbox.addWidget(self.state_button)
         hbox2.addLayout(commandbox, stretch=1)
-
         form_vbox.addLayout(hbox2)
+
         # attributes
         self.form = MAXForm(withButtons=False)
-        # self.form.setDisconnectOnHide(True)
 
         form_vbox.addLayout(commandbox)
         form_vbox.addWidget(self.form, stretch=1)
-
         self.status_area = StatusArea()
         form_vbox.addWidget(self.status_area)
-
         hbox.addLayout(form_vbox)
 
         # value bar
@@ -100,8 +83,6 @@ class PowerSupplyPanel(TaurusWidget):
         if device:
             self.form.setModel(["%s/%s" % (device, attribute)
                                 for attribute in self.attrs])
-            # self.form.setFontSize(25)
-
             attrname = "%s/%s" % (device, "Current")
             self.valuebar.setModel(attrname)
             # self.state_button.setModel(device)
@@ -133,21 +114,15 @@ class MagnetCircuitPanel(TaurusWidget):
         self.device_and_state = DevnameAndState(self)
         hbox2.addWidget(self.device_and_state)
         self.magnet_type_label = QtGui.QLabel("Magnet type:")
-        # self.magnet_type_label.setAlignment(QtCore.Qt.AlignTop)
         hbox2.addWidget(self.magnet_type_label)
         form_vbox.addLayout(hbox2)
 
         # attributes
         self.form = MAXForm(withButtons=False)
-        # self.form.setDisconnectOnHide(True)
-
         form_vbox.addWidget(self.form, stretch=1)
-
         self.status_area = StatusArea(self)
         form_vbox.addWidget(self.status_area)
-
         hbox.addLayout(form_vbox)
-
 
         # value bar
         self.valuebar = MAXValueBar(self)
@@ -166,8 +141,6 @@ class MagnetCircuitPanel(TaurusWidget):
         if device:
             self.form.setModel(["%s/%s" % (device, attribute)
                                 for attribute in self.attrs])
-            # self.form[0].readWidgetClass = "TaurusValueLabel"  # why?
-            # self.form.setFontSize(25)
             db = PyTango.Database()
             magnet = db.get_device_property(device, "MagnetProxies")["MagnetProxies"][0]
             magnet_type = PyTango.Database().get_device_property(magnet, "Type")["Type"][0]
@@ -176,7 +149,6 @@ class MagnetCircuitPanel(TaurusWidget):
             self.valuebar.setModel(attrname)
             attr = Attribute(attrname)
             self.current_label.setText("%s [%s]" % (attr.label, attr.unit))
-
             self.status_area.setModel(device)
         else:
             self.form.setModel(None)
@@ -191,6 +163,7 @@ class CyclePanel(TaurusWidget):
 
     attrs = ["CyclingTimePlateau", "CyclingIterations", "CyclingSteps",
              "CyclingRampTime"]
+    scale_factor = 1.1
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
@@ -198,7 +171,7 @@ class CyclePanel(TaurusWidget):
 
     def scaleSize(self):
         size = self.form.scrollArea.widget().frameSize()
-        return QtCore.QSize(size.width(), size.height() * 1.1)
+        return QtCore.QSize(size.width(), size.height() * self.scale_factor)
 
     def _setup_ui(self):
         vbox = QtGui.QVBoxLayout(self)
@@ -206,39 +179,21 @@ class CyclePanel(TaurusWidget):
 
         grid = QtGui.QGridLayout()
         self.form = MAXForm(withButtons=False)
-        print self.form.scrollArea.widget().frameSize()
+
         grid.addWidget(self.form, 0, 0, 2, 1)
+        # rescale taurus form methode
         self.form.scrollArea.sizeHint = self.scaleSize
-
-        hbox = QtGui.QHBoxLayout(self)
-
         self.status_label = StatusArea()
-        # hbox.addWidget(self.status_label, stretch=1)
-
         grid.addWidget(self.status_label, 0, 1, 1, 1)
-        # policy = QtGui.QSizePolicy()
-        # policy.setVerticalPolicy(QtGui.QSizePolicy.Fixed)
-        # self.status_label.setSizePolicy(policy)
 
         commandbox = QtGui.QVBoxLayout(self)
-        # self.state_button = ToggleButton(down_command="StartCycle",
-        #                                  up_command="StopCycle",
-        #                                  state=PyTango.DevState.RUNNING)
-        # commandbox.addWidget(self.state_button)
         self.start_button = TaurusCommandButton(command="StartCycle")
         self.start_button.setUseParentModel(True)
         self.stop_button = TaurusCommandButton(command="StopCycle")
         self.stop_button.setUseParentModel(True)
         commandbox.addWidget(self.start_button)
         commandbox.addWidget(self.stop_button)
-
         grid.addLayout(commandbox, 1, 1, 1, 1)
-        # hbox.addLayout(commandbox, stretch=1)
-
-
-        # self.form = MAXForm(withButtons=False)
-        # hbox.addWidget(self.form)
-
 
         vbox.addLayout(grid)
 
@@ -263,7 +218,7 @@ class CyclePanel(TaurusWidget):
 
             self.trend.setPaused()
             self.trend.setModel(["%s/Current" % ps])
-            # self.trend.setForcedReadingPeriod(1.0)
+            self.trend.setForcedReadingPeriod(0.2)
             self.trend.showLegend(True)
 
             # let's pause the trend when not cycling
@@ -275,11 +230,6 @@ class CyclePanel(TaurusWidget):
             self.trend.setModel(None)
             self.status_label.setModel(None)
 
-            # Note: the trend is acting a bit strange; it seems like it's
-            # polling the value at the "forced reading period" even if
-            # it's paused. Setting a low period makes the synoptic
-            # sluggish, presumably because of frequent taurus reads. This
-            # happens whether the trend is paused or not.
 
     def handle_cycling_state(self, evt_src, evt_type, evt_value):
         if evt_type in [PyTango.EventType.CHANGE_EVENT,
@@ -287,7 +237,9 @@ class CyclePanel(TaurusWidget):
             self.trend_trigger.emit(evt_value.value)
 
     def set_trend_paused(self, value):
+        self.trend.setForcedReadingPeriod(0.2 if value else -1)
         self.trend.setPaused(not value)
+
 
 
 class FieldPanel(TaurusWidget):
@@ -484,7 +436,6 @@ class TrimCoilCircuitPanel(TaurusWidget):
             self.switchboard_widget.setModel(None)
 
 
-
 def set_polling_period(period):
     """Set the polling period if not defined in sys.argv."""
     for arg in sys.argv:
@@ -498,7 +449,7 @@ def magnet_main():
     from taurus.qt.qtgui.application import TaurusApplication
     import sys
 
-    set_polling_period(200)
+    set_polling_period(1000)
     app = TaurusApplication(sys.argv)
     args = app.get_command_line_args()
 
