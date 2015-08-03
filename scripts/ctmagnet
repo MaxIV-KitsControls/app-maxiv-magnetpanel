@@ -1,6 +1,0 @@
-#!/usr/bin/python
-
-from magnetpanel.magnetpanel import magnet_main
-
-magnet_main()
-

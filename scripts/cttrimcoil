@@ -1,6 +1,0 @@
-#!/usr/bin/python
-
-from magnetpanel.magnetpanel import trimcoil_main
-
-trimcoil_main()
-

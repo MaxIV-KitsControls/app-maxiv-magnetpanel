@@ -3,7 +3,7 @@ from taurus.qt.qtgui.util import UILoadable
 from taurus.qt.qtgui.container import TaurusWidget
 
 from collections import defaultdict
-from resource import rc_switchboard
+from magnetpanel.resource import rc_switchboard
 # silence pep8 unused import warning
 assert rc_switchboard
 
@@ -35,6 +35,7 @@ class SwitchBoardPanel(TaurusWidget):
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
+
         self.loadUi()
 
         self.statusLabel.setUseParentModel(True)

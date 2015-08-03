@@ -1,9 +1,9 @@
-from maxlineedit import MAXLineEdit
 
 from taurus.qt.qtgui.input import TaurusValueLineEdit
 from taurus.qt.qtgui.panel import TaurusForm
 
-from resettable import ResettableTaurusValue
+from magnetpanel.utils.maxlineedit import MAXLineEdit
+from magnetpanel.utils.resettable import ResettableTaurusValue
 
 
 class MAXForm(TaurusForm):
