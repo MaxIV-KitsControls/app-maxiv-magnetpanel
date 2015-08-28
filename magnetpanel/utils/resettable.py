@@ -27,9 +27,10 @@ class ResettableTaurusValue(TaurusValue):
     def setModel(self, model):
         super(self.__class__, self).setModel(model)
         model = self.getModelObj()
-        self.storeCurrentValue()
-        if model.isReadWrite():
-            self.extraWidgetClass = ValueResetButton
+        if model is not None:
+            self.storeCurrentValue()
+            if model.isReadWrite():
+                self.extraWidgetClass = ValueResetButton
 
     def getDefaultExtraWidgetClass(self):
         # Unfortunately, the TaurusForm seems to freak out a bit if
@@ -81,10 +82,13 @@ class ValueResetButton(QPushButton):
     def _update_tooltip(self):
         value = self.taurusValueBuddy()._storedValue
         attr = self.taurusValueBuddy().getModelObj()
-        fmt = attr.format if attr.format != "Not specified" else None
-        unit = attr.unit if attr.unit != "No unit" else ""
-        if fmt:
-            tooltip = ('Reset to value: <b>%s %s</b>' % (fmt, unit)) % value
+        if attr is not None:
+            fmt = attr.format if attr.format != "Not specified" else None
+            unit = attr.unit if attr.unit != "No unit" else ""
+            if fmt:
+                tooltip = ('Reset to value: <b>%s %s</b>' % (fmt, unit)) % value
+            else:
+                tooltip = 'Reset to value: <b>%s %s</b>' % (value, unit)
+            self.setToolTip(tooltip + "<p>(Right-click to store)")
         else:
-            tooltip = 'Reset to value: <b>%s %s</b>' % (value, unit)
-        self.setToolTip(tooltip + "<p>(Right-click to store)")
+            self.setToolTip("")
