@@ -92,8 +92,8 @@ class PowerSupplyPanel(TaurusWidget):
 class MagnetCircuitPanel(TaurusWidget):
     "Displays the important attributes of the circuit device"
 
-    attrs = ["energy", "MainFieldComponent", "currentActual", "currentSet",
-             "NominalCurrentPercentage", "fixNormFieldOnEnergyChange"]
+    attrs = ["energy", "MainFieldComponent", "PowerSupplyReadValue", "PowerSupplySetPoint",
+             "fixNormFieldOnEnergyChange"]
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
@@ -158,7 +158,7 @@ class CyclePanel(TaurusWidget):
     trend_trigger = QtCore.pyqtSignal(bool)
 
     attrs = ["CyclingTimePlateau", "CyclingIterations", "CyclingSteps",
-             "CyclingRampTime"]
+             "CyclingRampTime", "NominalSetPoint"]
     scale_factor = 1.1
 
     def __init__(self, parent=None):
