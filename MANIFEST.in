@@ -1,2 +1,2 @@
-include magnetpanel/ui/*
+include magnetpanel/util/ui/*
 
