@@ -289,6 +289,7 @@ class DevnameAndState(TaurusWidget):
 
         grid.addWidget(QtGui.QLabel("Device:"), 0, 0)
         self.devicename_label = QtGui.QLabel("<devicename>")
+        self.devicename_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
         grid.addWidget(self.devicename_label, 0, 1)
 
         grid.addWidget(QtGui.QLabel("State:"), 1, 0)
@@ -333,6 +334,7 @@ class StatusArea(TaurusWidget):
         self.setLayout(hbox)
 
         self.status_label = QtGui.QLabel("(No status has been read.)")
+        self.status_label.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
         self.status_label.setWordWrap(True)
         self.status_label.setAlignment(QtCore.Qt.AlignTop)
         status_scroll_area = QtGui.QScrollArea()
@@ -465,3 +467,13 @@ class TaurusLazyQTabWidget(QtGui.QTabWidget):
                 if not tab.getModel():
                     tab.setModel(model)
                 #self.current_tab = tab
+
+
+if __name__ == "__main__":
+    import sys
+    from taurus.qt.qtgui.application import TaurusApplication
+    app = TaurusApplication(sys.argv)
+    w = StatusArea()
+    w.setModel(sys.argv[1])
+    w.show()
+    sys.exit(app.exec_())
