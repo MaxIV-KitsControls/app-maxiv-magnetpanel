@@ -298,6 +298,7 @@ class DevnameAndState(TaurusWidget):
         #hbox.addWidget(self.state_led)
         self.state_label = TaurusLabel()
         policy = QtGui.QSizePolicy()
+        self.state_label.setBgRole("state")
         policy.setHorizontalPolicy(QtGui.QSizePolicy.Expanding)
         self.state_label.setSizePolicy(policy)
 
@@ -473,7 +474,8 @@ if __name__ == "__main__":
     import sys
     from taurus.qt.qtgui.application import TaurusApplication
     app = TaurusApplication(sys.argv)
-    w = StatusArea()
+    #w = StatusArea()
+    w = DevnameAndState()
     w.setModel(sys.argv[1])
     w.show()
     sys.exit(app.exec_())
