@@ -20,6 +20,89 @@ from magnetpanel.utils.widgets import (AttributeColumnsTable, DeviceRowsTable,
                      DevnameAndState, StatusArea, TaurusLazyQTabWidget)
 
 
+class BinpPowerSupplyPanel(TaurusWidget):
+    "Allows directly controlling the BINP power supply connected to the circuit"
+    attrs = ["currentSetPoint", "Voltage"]
+
+    def __init__(self, parent=None):
+        TaurusWidget.__init__(self, parent)
+        self._setup_ui()
+
+    def _setup_ui(self):
+        hbox = QtGui.QHBoxLayout(self)
+        self.setLayout(hbox)
+        form_vbox = QtGui.QVBoxLayout(self)
+
+        # devicename label
+        hbox2 = QtGui.QVBoxLayout(self)
+        self.device_and_state = DevnameAndState(self)
+        hbox2.addWidget(self.device_and_state, stretch=2)
+
+        # commands
+        commandbox = QtGui.QHBoxLayout(self)
+        self.start_button = TaurusCommandButton(command="Start")
+        self.start_button.setUseParentModel(True)
+        self.stop_button = TaurusCommandButton(command="Stop")
+        self.stop_button.setUseParentModel(True)
+        self.init_button = TaurusCommandButton(command="Init")
+        self.init_button.setUseParentModel(True)
+        self.on_button = TaurusCommandButton(command="On")
+        self.on_button.setUseParentModel(True)
+        self.off_button = TaurusCommandButton(command="Off")
+        self.off_button.setUseParentModel(True)
+        self.enable_trigger_button = TaurusCommandButton(command="EnableTrigger")
+        self.enable_trigger_button.setUseParentModel(True)
+        self.disable_trigger_button = TaurusCommandButton(command="DisableTrigger")
+        self.disable_trigger_button.setUseParentModel(True)
+        self.reset_button = TaurusCommandButton(command="Reset")
+        self.reset_trigger_button.setUseParentModel(True)
+        commandbox.addWidget(self.start_button)
+        commandbox.addWidget(self.stop_button)
+        commandbox.addWidget(self.init_button)
+        commandbox.addWidget(self.on_button)
+        commandbox.addWidget(self.off_button)
+        commandbox.addWidget(self.enable_trigger_button)
+        commandbox.addWidget(self.disable_trigger_button)
+        commandbox.addWidget(self.reset_button)
+        hbox2.addLayout(commandbox, stretch=1)
+        form_vbox.addLayout(hbox2)
+
+        # attributes
+        self.form = MAXForm(withButtons=False)
+
+        form_vbox.addLayout(commandbox)
+        form_vbox.addWidget(self.form, stretch=1)
+        self.status_area = StatusArea()
+        form_vbox.addWidget(self.status_area)
+        hbox.addLayout(form_vbox)
+
+        # value bar
+        self.valuebar = MAXValueBar(self)
+        slider_vbox = QtGui.QVBoxLayout(self)
+        slider_vbox.setContentsMargins(10, 10, 10, 10)
+        hbox.addLayout(slider_vbox)
+        self.current_label = TaurusLabel()
+        self.current_label.setAlignment(QtCore.Qt.AlignCenter)
+        slider_vbox.addWidget(self.valuebar, 1)
+        slider_vbox.addWidget(self.current_label)
+
+    def setModel(self, device):
+        print self.__class__.__name__, "setModel", device
+        TaurusWidget.setModel(self, device)
+        self.device_and_state.setModel(device)
+        self.status_area.setModel(device)
+        if device:
+            self.form.setModel(["%s/%s" % (device, attribute)
+                                for attribute in self.attrs])
+            attrname = "%s/%s" % (device, "Current")
+            self.valuebar.setModel(attrname)
+            # self.state_button.setModel(device)
+            attr = Attribute(attrname)
+            self.current_label.setText("%s [%s]" % (attr.label, attr.unit))
+        else:
+            self.form.setModel(None)
+            self.valuebar.setModel(None)
+
 class PowerSupplyPanel(TaurusWidget):
     "Allows directly controlling the power supply connected to the circuit"
     attrs = ["Current", "Voltage", "Resistance"]
