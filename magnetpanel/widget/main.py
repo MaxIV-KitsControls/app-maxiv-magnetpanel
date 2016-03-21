@@ -71,32 +71,27 @@ class MagnetPanel(TaurusWidget):
 
         self.resize(700, 450)
 
-    def setModel(self, magnet):
-        print "MagnetPanel setModel", magnet
-        TaurusWidget.setModel(self, magnet)
+    def setModel(self, model):
+        TaurusWidget.setModel(self, model)
         db = PyTango.Database()
-        if magnet:
+        devclass = PyTango.Database().get_class_for_device(str(model))
+        if devclass == "Magnet":
             circuit = str(db.get_device_property(
-                magnet, "CircuitProxies")["CircuitProxies"][0])
-            # self.circuit_widget.setModel(circuit)
+                model, "CircuitProxies")["CircuitProxies"][0])
             self.setWindowTitle("Magnet circuit panel: %s" % circuit)
             ps = str(db.get_device_property(
                 circuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
-            # self.ps_widget.setModel(ps)
-
-            # self.magnets_widget.setModel(circuit)
-
-            # self.cycle_widget.setModel(circuit)
-
-            # self.field_widget.setModel(circuit)
             self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
+        elif devclass in ("MagnetCircuit", "TrimCircuit"):
+            ps = str(db.get_device_property(
+                model, "PowerSupplyProxy")["PowerSupplyProxy"][0])
+            self.tabs.setModel([model, ps, model, model, model])
         else:
             self.circuit_widget.setModel(None)
             self.cycle_widget.setModel(None)
             self.field_widget.setModel(None)
             self.ps_widget.setModel(None)
             self.magnets_widget.setModel(None)
-        print "********* magnet DONE"
 
 
 class TrimCoilCircuitPanel(TaurusWidget):
