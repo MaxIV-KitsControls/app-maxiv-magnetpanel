@@ -17,6 +17,7 @@ from magnetpanel.widget.panels import MagnetCircuitPanel,\
                                       CyclePanel, \
                                       FieldPanel, \
                                       PowerSupplyPanel, \
+                                      BinpPowerSupplyPanel, \
                                       SwitchBoardPanel
 
 PERIOD_ARG = "--taurus-polling-period="
@@ -81,6 +82,10 @@ class MagnetPanel(TaurusWidget):
             self.setWindowTitle("Magnet circuit panel: %s" % circuit)
             ps = str(db.get_device_property(
                 circuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
+            if ps == "r3-a110110cab30/mag/psba-01":
+                self.ps_widget = BinpPowerSupplyPanel()
+            if ps == "r3-a111110cab30/mag/psbb-01":
+                self.ps_widget = BinpPowerSupplyPanel()
             self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
         elif devclass in ("MagnetCircuit", "TrimCircuit"):
             ps = str(db.get_device_property(
@@ -136,6 +141,10 @@ class TrimCoilCircuitPanel(TaurusWidget):
                 trimcircuit, "SwitchBoardProxy")["SwitchBoardProxy"][0])
             ps = str(db.get_device_property(
                 trimcircuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
+            if ps == "r3-a110110cab30/mag/psba-01":
+                self.ps_widget = BinpPowerSupplyPanel()
+            if ps == "r3-a111110cab30/mag/psbb-01":
+                self.ps_widget = BinpPowerSupplyPanel()
             self.tabs.setModel([trimcircuit, ps, trimcircuit, trimcircuit, swb])
         else:
             self.setWindowTitle("N/A")
