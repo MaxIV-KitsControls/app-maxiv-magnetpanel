@@ -10,8 +10,8 @@ from taurus.qt import QtGui
 from taurus.qt.qtgui.panel import TaurusWidget
 # MagnetPanel imports
 from magnetpanel.utils.widgets import TaurusLazyQTabWidget
-from magnetpanel.widget.panels import MagnetCircuitPanel, MagnetListPanel,
-from magnetpanel.widget.panels import CyclePanel, FieldPanel, PowerSupplyPanel,
+from magnetpanel.widget.panels import MagnetCircuitPanel, MagnetListPanel
+from magnetpanel.widget.panels import CyclePanel, FieldPanel, PowerSupplyPanel
 from magnetpanel.widget.panels import BinpPowerSupplyPanel, SwitchBoardPanel
 
 PERIOD_ARG = "--taurus-polling-period="
