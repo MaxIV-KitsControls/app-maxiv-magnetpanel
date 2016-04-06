@@ -32,9 +32,14 @@ def set_polling_period(period):
         sys.argv.append(PERIOD_ARG + str(period))
 
 
-
-
-
+def make_binpps_panel(widget):
+    """ Switch PowerSupplyPanel to BinpPowerSupplyPanel """
+    widget.ps_widget = BinpPowerSupplyPanel()
+    # remoce previous PS panel 
+    widget.tabs.removeTab(1)
+    # set New one
+    widget.ps_tab = widget.tabs.insertTab(1, widget.ps_widget, "Power supply")
+    widget.tabs.setCurrentIndex(widget.ps_tab)
 
 class MagnetPanel(TaurusWidget):
     """This is the main panel that collects all the specific widgets above
@@ -71,25 +76,33 @@ class MagnetPanel(TaurusWidget):
         tabs.setCurrentIndex(self.ps_tab)
 
         self.resize(700, 450)
-
+    
     def setModel(self, model):
         TaurusWidget.setModel(self, model)
         db = PyTango.Database()
-        devclass = PyTango.Database().get_class_for_device(str(model))
+        # get device class
+        devclass = db.get_class_for_device(str(model))
+        # Devices models from magnet device
         if devclass == "Magnet":
+            # get circuit device
             circuit = str(db.get_device_property(
                 model, "CircuitProxies")["CircuitProxies"][0])
             self.setWindowTitle("Magnet circuit panel: %s" % circuit)
+            # get PS device
             ps = str(db.get_device_property(
                 circuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
-            if ps == "r3-a110110cab30/mag/psba-01":
-                self.ps_widget = BinpPowerSupplyPanel()
-            if ps == "r3-a111110cab30/mag/psbb-01":
-                self.ps_widget = BinpPowerSupplyPanel()
+            # check PS class
+            if db.get_class_for_device(ps) == "PulsePowerSupply":
+                # change ps panel to bimp ps panel (for kicker and pinger)
+                make_binpps_panel(self)
+            # set model
             self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
+        # Devices models from circuit device
         elif devclass in ("MagnetCircuit", "TrimCircuit"):
             ps = str(db.get_device_property(
                 model, "PowerSupplyProxy")["PowerSupplyProxy"][0])
+            if db.get_class_for_device(ps) == "PulsePowerSupply":
+                make_binpps_panel(self)
             self.tabs.setModel([model, ps, model, model, model])
         else:
             self.circuit_widget.setModel(None)
@@ -141,10 +154,11 @@ class TrimCoilCircuitPanel(TaurusWidget):
                 trimcircuit, "SwitchBoardProxy")["SwitchBoardProxy"][0])
             ps = str(db.get_device_property(
                 trimcircuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
-            if ps == "r3-a110110cab30/mag/psba-01":
-                self.ps_widget = BinpPowerSupplyPanel()
-            if ps == "r3-a111110cab30/mag/psbb-01":
-                self.ps_widget = BinpPowerSupplyPanel()
+            # check PS class
+            if db.get_class_for_device(ps) == "PulsePowerSupply":
+                # change ps panel to bimp ps panel (for kicker and pinger)
+                make_binpps_panel(self)
+            # set model
             self.tabs.setModel([trimcircuit, ps, trimcircuit, trimcircuit, swb])
         else:
             self.setWindowTitle("N/A")
