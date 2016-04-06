@@ -55,7 +55,7 @@ class BinpPowerSupplyPanel(TaurusWidget):
         self.disable_trigger_button = TaurusCommandButton(command="DisableTrigger")
         self.disable_trigger_button.setUseParentModel(True)
         self.reset_button = TaurusCommandButton(command="Reset")
-        self.reset_trigger_button.setUseParentModel(True)
+        self.reset_button.setUseParentModel(True)
         commandbox.addWidget(self.start_button)
         commandbox.addWidget(self.stop_button)
         commandbox.addWidget(self.init_button)
