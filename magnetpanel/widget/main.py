@@ -1,24 +1,18 @@
+# Imports
 try:
     from collections import defaultdict
 except ImportError:
     from defaultdict import defaultdict
-
 import sys
 import PyTango
-
-from taurus.qt import  QtGui
-
+# Taurus imports
+from taurus.qt import QtGui
 from taurus.qt.qtgui.panel import TaurusWidget
-
+# MagnetPanel imports
 from magnetpanel.utils.widgets import TaurusLazyQTabWidget
-
-from magnetpanel.widget.panels import MagnetCircuitPanel,\
-                                      MagnetListPanel, \
-                                      CyclePanel, \
-                                      FieldPanel, \
-                                      PowerSupplyPanel, \
-                                      BinpPowerSupplyPanel, \
-                                      SwitchBoardPanel
+from magnetpanel.widget.panels import MagnetCircuitPanel, MagnetListPanel,
+from magnetpanel.widget.panels import CyclePanel, FieldPanel, PowerSupplyPanel,
+from magnetpanel.widget.panels import BinpPowerSupplyPanel, SwitchBoardPanel
 
 PERIOD_ARG = "--taurus-polling-period="
 
@@ -35,11 +29,12 @@ def set_polling_period(period):
 def make_binpps_panel(widget):
     """ Switch PowerSupplyPanel to BinpPowerSupplyPanel """
     widget.ps_widget = BinpPowerSupplyPanel()
-    # remoce previous PS panel 
+    # remoce previous PS panel
     widget.tabs.removeTab(1)
     # set New one
     widget.ps_tab = widget.tabs.insertTab(1, widget.ps_widget, "Power supply")
     widget.tabs.setCurrentIndex(widget.ps_tab)
+
 
 class MagnetPanel(TaurusWidget):
     """This is the main panel that collects all the specific widgets above
@@ -50,33 +45,32 @@ class MagnetPanel(TaurusWidget):
         self._setup_ui()
 
     def _setup_ui(self):
-
+        # layout
         hbox = QtGui.QHBoxLayout(self)
         self.setLayout(hbox)
-
+        # tabs
         tabs = self.tabs = TaurusLazyQTabWidget()
         hbox.addWidget(tabs)
-
+        # circuit panel
         self.circuit_widget = MagnetCircuitPanel()
         self.circuit_tab = tabs.addTab(self.circuit_widget, "Circuit")
-
+        # ps panel
         self.ps_widget = PowerSupplyPanel()
         self.ps_tab = tabs.addTab(self.ps_widget, "Power supply")
-
+        # magnet panel
         self.magnets_widget = MagnetListPanel()
         self.magnets_tab = tabs.addTab(self.magnets_widget, "Magnets")
-
+        # cycle panel
         self.cycle_widget = CyclePanel()
         self.cycle_tab = tabs.addTab(self.cycle_widget, "Cycle")
-
+        # field panel
         self.field_widget = FieldPanel()
         self.field_tab = tabs.addTab(self.field_widget, "Field")
-
         # make the PS tab default for now...
         tabs.setCurrentIndex(self.ps_tab)
-
+        # resize
         self.resize(700, 450)
-    
+
     def setModel(self, model):
         TaurusWidget.setModel(self, model)
         db = PyTango.Database()
@@ -118,48 +112,47 @@ class TrimCoilCircuitPanel(TaurusWidget):
         self._setup_ui()
 
     def _setup_ui(self):
-
+        # layout
         hbox = QtGui.QHBoxLayout(self)
         self.setLayout(hbox)
-
+        # tabs
         tabs = self.tabs = TaurusLazyQTabWidget()
         hbox.addWidget(tabs)
-
+        # magnet
         self.circuit_widget = MagnetCircuitPanel()
         self.circuit_tab = tabs.addTab(self.circuit_widget, "Circuit")
-
+        # ps
         self.ps_widget = PowerSupplyPanel()
         self.ps_tab = tabs.addTab(self.ps_widget, "Power supply")
-
+        # magnet
         self.magnets_widget = MagnetListPanel()
         self.magnets_tab = tabs.addTab(self.magnets_widget, "Magnets")
-
+        # field
         self.field_widget = FieldPanel()
         self.field_tab = tabs.addTab(self.field_widget, "Field")
-
+        # switchboard
         self.switchboard_widget = SwitchBoardPanel()
-        self.switchboard_tab = tabs.addTab(self.switchboard_widget, "Switchboard")
-
+        tab = tabs.addTab(self.switchboard_widget, "Switchboard")
+        self.switchboard_tab = tab
         # make the PS tab default for now...
         tabs.setCurrentIndex(self.ps_tab)
-
         self.resize(700, 400)
 
-    def setModel(self, trimcircuit):
-        TaurusWidget.setModel(self, trimcircuit)
+    def setModel(self, trim):
+        TaurusWidget.setModel(self, trim)
         db = PyTango.Database()
-        if trimcircuit:
-            self.setWindowTitle("Trim coil panel: %s" % trimcircuit)
+        if trim:
+            self.setWindowTitle("Trim coil panel: %s" % trim)
             swb = str(db.get_device_property(
-                trimcircuit, "SwitchBoardProxy")["SwitchBoardProxy"][0])
+                trim, "SwitchBoardProxy")["SwitchBoardProxy"][0])
             ps = str(db.get_device_property(
-                trimcircuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
+                trim, "PowerSupplyProxy")["PowerSupplyProxy"][0])
             # check PS class
             if db.get_class_for_device(ps) == "PulsePowerSupply":
                 # change ps panel to bimp ps panel (for kicker and pinger)
                 make_binpps_panel(self)
             # set model
-            self.tabs.setModel([trimcircuit, ps, trimcircuit, trimcircuit, swb])
+            self.tabs.setModel([trim, ps, trim, trim, swb])
         else:
             self.setWindowTitle("N/A")
             self.circuit_widget.setModel(None)
@@ -168,15 +161,6 @@ class TrimCoilCircuitPanel(TaurusWidget):
             self.ps_widget.setModel(None)
             self.magnets_widget.setModel(None)
             self.switchboard_widget.setModel(None)
-
-
-
-
-
-
-
-
-
 
 
 def magnet_main():
