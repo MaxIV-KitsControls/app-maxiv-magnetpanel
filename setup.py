@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="python-magnetpanel",
-    version="0.5.4",
+    version="0.5.5",
     description="QT widget for controlling a magnet circuit.",
     author="Johan Forsberg",
     author_email="johan.forsberg@maxlab.lu.se",
