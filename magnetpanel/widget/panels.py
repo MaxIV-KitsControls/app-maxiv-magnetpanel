@@ -22,7 +22,7 @@ from magnetpanel.utils.widgets import (AttributeColumnsTable, DeviceRowsTable,
 
 class BinpPowerSupplyPanel(TaurusWidget):
     "Allows directly controlling the BINP power supply connected to the circuit"
-    attrs = ["currentSetPoint", "Voltage"]
+    attrs = ["Voltage"]
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
@@ -94,7 +94,7 @@ class BinpPowerSupplyPanel(TaurusWidget):
         if device:
             self.form.setModel(["%s/%s" % (device, attribute)
                                 for attribute in self.attrs])
-            attrname = "%s/%s" % (device, "Current")
+            attrname = "%s/%s" % (device, "Voltage")
             self.valuebar.setModel(attrname)
             # self.state_button.setModel(device)
             attr = Attribute(attrname)
@@ -187,7 +187,7 @@ class MagnetCircuitPanel(TaurusWidget):
         hbox = QtGui.QHBoxLayout(self)
         self.setLayout(hbox)
 
-        form_vbox = QtGui.QVBoxLayout(self)
+        form_vbox = self.vbox = QtGui.QVBoxLayout(self)
 
         hbox2 = QtGui.QVBoxLayout(self)
         self.device_and_state = DevnameAndState(self)
@@ -202,6 +202,7 @@ class MagnetCircuitPanel(TaurusWidget):
         self.status_area = StatusArea(self)
         form_vbox.addWidget(self.status_area)
         hbox.addLayout(form_vbox)
+
 
         # value bar
         self.valuebar = MAXValueBar(self)
