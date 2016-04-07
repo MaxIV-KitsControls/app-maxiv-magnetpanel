@@ -14,6 +14,8 @@ from magnetpanel.widget.panels import MagnetCircuitPanel, MagnetListPanel
 from magnetpanel.widget.panels import CyclePanel, FieldPanel, PowerSupplyPanel
 from magnetpanel.widget.panels import BinpPowerSupplyPanel, SwitchBoardPanel
 
+from taurus.qt.qtgui.button import TaurusCommandButton
+
 PERIOD_ARG = "--taurus-polling-period="
 
 
@@ -26,6 +28,18 @@ def set_polling_period(period):
         sys.argv.append(PERIOD_ARG + str(period))
 
 
+def hack_circuitpanel(widget, ps_model):
+    """ add trigger buttons from PS to the circuit panel (BinpPowerSupplyPanel case) """
+    circuit = widget.circuit_widget
+    h_box = QtGui.QHBoxLayout(circuit)
+    circuit.enable_trigger_button = TaurusCommandButton(command="EnableTrigger")
+    circuit.disable_trigger_button = TaurusCommandButton(command="DisableTrigger")
+    circuit.enable_trigger_button.setModel(ps_model)
+    circuit.disable_trigger_button.setModel(ps_model)
+    h_box.addWidget(circuit.enable_trigger_button)
+    h_box.addWidget(circuit.disable_trigger_button)
+    circuit.vbox.insertLayout(1, h_box)
+
 def make_binpps_panel(widget):
     """ Switch PowerSupplyPanel to BinpPowerSupplyPanel """
     widget.ps_widget = BinpPowerSupplyPanel()
@@ -33,7 +47,10 @@ def make_binpps_panel(widget):
     widget.tabs.removeTab(widget.ps_tab)
     # set New one
     widget.ps_tab = widget.tabs.insertTab(1, widget.ps_widget, "Power supply")
-    widget.tabs.setCurrentIndex(widget.ps_tab)
+    # default view is circuit
+    widget.tabs.setCurrentIndex(widget.circuit_tab)
+
+
 
 
 class MagnetPanel(TaurusWidget):
@@ -91,6 +108,7 @@ class MagnetPanel(TaurusWidget):
                 self.tabs.removeTab(self.cycle_tab)
                 # change ps panel to bimp ps panel (for kicker and pinger)
                 make_binpps_panel(self)
+                hack_circuitpanel(self, ps)
             # set model
             self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
         # Devices models from circuit device
@@ -101,6 +119,7 @@ class MagnetPanel(TaurusWidget):
                 # no cycling for pulse ps
                 self.tabs.removeTab(self.cycle_tab)
                 make_binpps_panel(self)
+                hack_circuitpanel(self, ps)
             self.tabs.setModel([model, ps, model, model, model])
         else:
             self.circuit_widget.setModel(None)
@@ -155,6 +174,7 @@ class TrimCoilCircuitPanel(TaurusWidget):
             if db.get_class_for_device(ps) == "PulsePowerSupply":
                 # change ps panel to bimp ps panel (for kicker and pinger)
                 make_binpps_panel(self)
+                hack_circuitpanel(self, ps)
             # set model
             self.tabs.setModel([trim, ps, trim, trim, swb])
         else:
