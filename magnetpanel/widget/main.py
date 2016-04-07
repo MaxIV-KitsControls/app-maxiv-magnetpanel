@@ -109,6 +109,7 @@ class MagnetPanel(TaurusWidget):
                 # change ps panel to bimp ps panel (for kicker and pinger)
                 make_binpps_panel(self)
                 hack_circuitpanel(self, ps)
+                self.resize(700, 500)
             # set model
             self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
         # Devices models from circuit device
@@ -120,6 +121,7 @@ class MagnetPanel(TaurusWidget):
                 self.tabs.removeTab(self.cycle_tab)
                 make_binpps_panel(self)
                 hack_circuitpanel(self, ps)
+                self.resize(700, 500)
             self.tabs.setModel([model, ps, model, model, model])
         else:
             self.circuit_widget.setModel(None)
@@ -175,6 +177,7 @@ class TrimCoilCircuitPanel(TaurusWidget):
                 # change ps panel to bimp ps panel (for kicker and pinger)
                 make_binpps_panel(self)
                 hack_circuitpanel(self, ps)
+                self.resize(700, 500)
             # set model
             self.tabs.setModel([trim, ps, trim, trim, swb])
         else:
