@@ -30,7 +30,7 @@ def make_binpps_panel(widget):
     """ Switch PowerSupplyPanel to BinpPowerSupplyPanel """
     widget.ps_widget = BinpPowerSupplyPanel()
     # remoce previous PS panel
-    widget.tabs.removeTab(1)
+    widget.tabs.removeTab(widget.ps_tab)
     # set New one
     widget.ps_tab = widget.tabs.insertTab(1, widget.ps_widget, "Power supply")
     widget.tabs.setCurrentIndex(widget.ps_tab)
@@ -87,6 +87,8 @@ class MagnetPanel(TaurusWidget):
                 circuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
             # check PS class
             if db.get_class_for_device(ps) == "PulsePowerSupply":
+                # no cycling for pulse ps
+                self.tabs.removeTab(self.cycle_tab)
                 # change ps panel to bimp ps panel (for kicker and pinger)
                 make_binpps_panel(self)
             # set model
@@ -96,6 +98,8 @@ class MagnetPanel(TaurusWidget):
             ps = str(db.get_device_property(
                 model, "PowerSupplyProxy")["PowerSupplyProxy"][0])
             if db.get_class_for_device(ps) == "PulsePowerSupply":
+                # no cycling for pulse ps
+                self.tabs.removeTab(self.cycle_tab)
                 make_binpps_panel(self)
             self.tabs.setModel([model, ps, model, model, model])
         else:
