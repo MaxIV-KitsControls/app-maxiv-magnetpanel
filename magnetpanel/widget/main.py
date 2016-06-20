@@ -85,19 +85,29 @@ class MagnetPanel(TaurusWidget):
         self.field_tab = tabs.addTab(self.field_widget, "Field")
         # make the PS tab default for now...
         tabs.setCurrentIndex(self.ps_tab)
-        # resize
+
         self.resize(700, 450)
 
     def setModel(self, model):
         TaurusWidget.setModel(self, model)
         db = PyTango.Database()
-        # get device class
         devclass = db.get_class_for_device(str(model))
         # Devices models from magnet device
         if devclass == "Magnet":
             # get circuit device
-            circuit = str(db.get_device_property(
-                model, "CircuitProxies")["CircuitProxies"][0])
+            # Note: Here, we check for both properties,
+            # as there are currently two different builds of the
+            # Magnet device; one for R1 and one for the rest of the
+            # machine.  This part should be removed in the future,
+            # whenever the CircuitProxies property goes away.
+            circuit_props = ["CircuitProxies",  # old property
+                             "MainCoilProxy"]   # new property
+            circuits = db.get_device_property(model, circuit_props)
+            if circuits["CircuitProxies"]:
+                circuit = circuits["CircuitProxies"][0]
+            else:
+                # this will be the only case in the future
+                circuit = circuits["MainCoilProxy"][0]
             self.setWindowTitle("Magnet circuit panel: %s" % circuit)
             # get PS device
             ps = str(db.get_device_property(
