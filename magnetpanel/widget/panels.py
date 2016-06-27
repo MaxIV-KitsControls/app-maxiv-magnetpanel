@@ -392,6 +392,9 @@ class MagnetListPanel(TaurusWidget):
         db = PyTango.Database()
         if circuit:
             magnets = db.get_device_property(circuit, "MagnetProxies")["MagnetProxies"]
-            self.table.setModel(magnets, ["State", "TemperatureInterlock"])
+            if "SQF" in magnets[0]:
+                self.table.setModel(magnets, ["State", "TemperatureInterlock", "shuntResistance"])
+            else:
+                self.table.setModel(magnets, ["State", "TemperatureInterlock"])
         else:
             self.table.setModel(None)
