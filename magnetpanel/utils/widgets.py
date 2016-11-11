@@ -21,23 +21,36 @@ class AttributeColumn(object):
         self.parent.onEvent(self.column, *args)
 
 
-class TableItem(object):
+class TableItem(QtGui.QTableWidgetItem):
 
-    def __init__(self, parent, row, column):
-        self.parent = parent
-        self.row = row
-        self.column = column
+    def __init__(self, trigger):
+	self.trigger = trigger
+        self.value = None
+        self.config = None
+        self.source = None
+        QtGui.QTableWidgetItem.__init__(self)
 
-    def event_received(self, *args):
-        self.parent.onEvent(self.row, self.column, *args)
+    @property
+    def writable_boolean(self):
+        return (self.value is not None and
+                self.value.type == PyTango.CmdArgType.DevBoolean and
+                self.value.w_value is not None)
 
+    def event_received(self, evt_src, evt_type, evt_value):
+        if evt_type in [PyTango.EventType.CHANGE_EVENT,
+                        PyTango.EventType.PERIODIC_EVENT]:
+            self.value = evt_value
+            self.source = evt_src
+            self.trigger.emit(self.row(), self.column())
+        if hasattr(evt_value, "format"):
+            self.config = evt_value
 
 class AttributeColumnsTable(TaurusWidget):
 
     """Display several 1D spectrum attributes belonging to the same
     device as columns in a table."""
 
-    trigger = QtCore.pyqtSignal(int)
+    trigger = QtCore.pyqtSignal((int, int))
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
@@ -185,6 +198,8 @@ class DeviceRowsTable(TaurusWidget):
         hbox.addWidget(self.table)
 
         self.trigger.connect(self.update_item)
+        self.table.itemClicked.connect(self.on_item_clicked)
+
         self._items = {}
         self.attributes = {}
 
@@ -230,49 +245,56 @@ class DeviceRowsTable(TaurusWidget):
                 # Check if there are any columns at all
                 self.table.setRowCount(len(devices))
 
-                self._values = defaultdict(dict)
-                self._config = defaultdict(dict)
-
                 for r, (dev, attrs) in enumerate(self.attributes.items()):
                     item = QtGui.QTableWidgetItem(dev)
                     item.setFlags(QtCore.Qt.ItemIsSelectable |
                                   QtCore.Qt.ItemIsEnabled)
                     self.table.setItem(r, 0, item)
-                    self._items[dev] = {}
-                    for c, att in enumerate(attrs):
+                    for c, att in enumerate(attrs, 1):
                         # JFF: this is a workaround for a behavior in Taurus. Just
                         # adding a new listener to each attribute does not work, the
                         # previous ones get removed for some reason.
-                        titem = TableItem(self, r, c+1)
-                        self._items[dev][att.name] = titem  # keep reference to prevent GC
-                        att.addListener(titem.event_received)
+                        item = TableItem(self.trigger)
+                        self.table.setItem(r, c, item)
+                        att.addListener(item.event_received)
 
             except PyTango.DevFailed:
                 pass
 
-    def onEvent(self, row, column, evt_src, evt_type, evt_value):
-        if evt_type in [PyTango.EventType.CHANGE_EVENT,
-                        PyTango.EventType.PERIODIC_EVENT]:
-            self._values[row][column] = evt_value
-            self.trigger.emit(row, column)
-        if hasattr(evt_value, "format"):
-            self._config[row][column] = evt_value
-
     def update_item(self, row, column):
-        try:
-            value = self._values[row][column]
-            cfg = self._config[row].get(column)
-            if cfg and cfg.format != "Not specified":
-                item = QtGui.QTableWidgetItem(cfg.format % value.value)
-            else:
-                item = QtGui.QTableWidgetItem(str(value.value))
-            item.setFlags( QtCore.Qt.ItemIsSelectable |  QtCore.Qt.ItemIsEnabled )
-            if value.type is PyTango.CmdArgType.DevState:
-                if value.value in self.STATE_COLORS:
-                    item.setBackgroundColor(QtGui.QColor(*self.STATE_COLORS[value.value]))
-            self.table.setItem(row, column, item)
-        except KeyError:
-            pass
+        item = self.table.item(row, column)
+        value, config = item.value, item.config
+
+        # Set text
+        if config and config.format != "Not specified":
+            item.setText(config.format % value.value)
+        else:
+            item.setText(str(value.value))
+
+	# Set flags and state
+        if item.writable_boolean:
+            item.setFlags(QtCore.Qt.ItemIsSelectable
+                          | QtCore.Qt.ItemIsEnabled
+                          | QtCore.Qt.ItemIsUserCheckable)
+            state = QtCore.Qt.Checked if value.w_value else QtCore.Qt.Unchecked
+            item.setCheckState(state)
+	else:
+            item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
+
+        # Set background color
+        if value.type == PyTango.CmdArgType.DevState:
+            if value.value in self.STATE_COLORS:
+                item.setBackgroundColor(QtGui.QColor(*self.STATE_COLORS[value.value]))
+
+
+    def on_item_clicked(self, item):
+        # Not a writable item
+        if not isinstance(item, TableItem) or not item.writable_boolean:
+	    return
+        button_state = (item.checkState() == QtCore.Qt.Checked)
+        value_state = item.value.w_value
+        if button_state != value_state:
+            item.source.write(button_state)
 
 
 class DevnameAndState(TaurusWidget):
