@@ -1,7 +1,7 @@
 import taurus
 from taurus.external.qt import Qt, QtCore, QtGui
 from taurus.qt.qtgui.input import TaurusValueLineEdit
-from taurus.qt.qtgui.panel import TaurusWidget
+from taurus.qt.qtgui.container import TaurusWidget
 
 import PyTango
 
