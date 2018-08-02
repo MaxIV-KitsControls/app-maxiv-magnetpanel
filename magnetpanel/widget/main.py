@@ -244,9 +244,8 @@ def magnet_main():
     w = MagnetPanel()
     # w = TrimCoilCircuitPanel()
 
-    # if len(args) > 0:
-    #    w.setModel(args[0])
-    w.setModel('henenq/test/test1')
+    if len(args) > 0:
+        w.setModel(args[0])
     app.setCursorFlashTime(0)
 
     w.show()
