@@ -7,9 +7,9 @@ from contextlib import contextmanager
 # import PyQt4.Qt as Qt
 # from PyQt4 import QtGui, QtCore
 # from PyQt4 import
-from taurus.qt import Qt, QtCore, QtGui
+from taurus.external.qt import Qt, QtCore, QtGui
 from taurus.qt.QtCore import QPointF as Point, QRectF as Rect
-from taurus.qt.qtgui.panel import TaurusWidget
+from taurus.qt.qtgui.container import TaurusWidget
 from taurus import Configuration
 import PyTango
 

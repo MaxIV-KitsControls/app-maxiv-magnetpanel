@@ -6,10 +6,10 @@ except ImportError:
 import sys
 import PyTango
 
-from taurus.qt import QtCore, QtGui
+from taurus.external.qt import QtCore, QtGui
 from taurus import Attribute
 
-from taurus.qt.qtgui.panel import TaurusWidget
+from taurus.qt.qtgui.container import TaurusWidget
 from taurus.qt.qtgui.display import TaurusLabel
 from taurus.qt.qtgui.button import TaurusCommandButton
 from taurus.qt.qtgui.plot import TaurusTrend
@@ -21,7 +21,7 @@ from magnetpanel.utils.widgets import (AttributeColumnsTable, DeviceRowsTable,
 
 
 class BinpPowerSupplyPanel(TaurusWidget):
-    "Allows directly controlling the BINP power supply connected to the circuit"
+    '''Allows directly controlling the BINP power supply connected to the circuit'''
     attrs = ["Voltage"]
 
     def __init__(self, parent=None):
@@ -102,6 +102,134 @@ class BinpPowerSupplyPanel(TaurusWidget):
         else:
             self.form.setModel(None)
             self.valuebar.setModel(None)
+
+
+class MikPowerSupplyPanel(TaurusWidget):
+    '''Allows directly controlling the MIK power supply'''
+    attrs = ["Set_Voltage", "Set_Current", "Delivered_Voltage", "Delivered_Current",
+             "HV_On_Status", "Interlock_Status", "Regulation_On_Status", "Trigger_Enabled"]
+
+    def __init__(self, parent=None):
+        TaurusWidget.__init__(self, parent)
+        self._setup_ui()
+
+    def _setup_ui(self):
+        hbox = QtGui.QHBoxLayout(self)
+        self.setLayout(hbox)
+        form_vbox = QtGui.QVBoxLayout(self)
+
+        # devicename label
+        hbox2 = QtGui.QVBoxLayout(self)
+        self.device_and_state = DevnameAndState(self)
+        hbox2.addWidget(self.device_and_state, stretch=2)
+
+        # commands
+        commandbox = QtGui.QHBoxLayout(self)
+        self.hvoff_button = TaurusCommandButton(command="HV_OFF")
+        self.hvoff_button.setUseParentModel(True)
+        self.hvon_button = TaurusCommandButton(command="HV_ON")
+        self.hvon_button.setUseParentModel(True)
+        self.hvregoff_button = TaurusCommandButton(command="HV_Reg_OFF")
+        self.hvregoff_button.setUseParentModel(True)
+        self.hvregon_button = TaurusCommandButton(command="HV_Reg_ON")
+        self.hvregon_button.setUseParentModel(True)
+        self.init_button = TaurusCommandButton(command="InitDevice")
+        self.init_button.setUseParentModel(True)
+        self.reset_button = TaurusCommandButton(command="Reset_Interlocks")
+        self.reset_button.setUseParentModel(True)
+        self.trigenable_button = TaurusCommandButton(command="EnableTrigger")
+        self.trigenable_button.setUseParentModel(True)
+        self.trigdisable_button = TaurusCommandButton(command="DisableTrigger")
+        self.trigdisable_button.setUseParentModel(True)
+        commandbox.addWidget(self.hvoff_button)
+        commandbox.addWidget(self.hvon_button)
+        commandbox.addWidget(self.hvregoff_button)
+        commandbox.addWidget(self.hvregon_button)
+        commandbox.addWidget(self.init_button)
+        commandbox.addWidget(self.reset_button)
+        commandbox.addWidget(self.trigenable_button)
+        commandbox.addWidget(self.trigdisable_button)
+
+        hbox2.addLayout(commandbox, stretch=1)
+        form_vbox.addLayout(hbox2)
+
+        # attributes
+        self.form = MAXForm(withButtons=False)
+
+        form_vbox.addLayout(commandbox)
+        form_vbox.addWidget(self.form, stretch=1)
+        self.status_area = StatusArea()
+        form_vbox.addWidget(self.status_area)
+        hbox.addLayout(form_vbox)
+
+        # # value bar
+        # self.valuebar = MAXValueBar(self)
+        # slider_vbox = QtGui.QVBoxLayout(self)
+        # slider_vbox.setContentsMargins(10, 10, 10, 10)
+        # hbox.addLayout(slider_vbox)
+        # self.current_label = TaurusLabel()
+        # self.current_label.setAlignment(QtCore.Qt.AlignCenter)
+        # slider_vbox.addWidget(self.valuebar, 1)
+        # slider_vbox.addWidget(self.current_label)
+
+    def setModel(self, device):
+        print self.__class__.__name__, "setModel", device
+        TaurusWidget.setModel(self, device)
+        self.device_and_state.setModel(device)
+        self.status_area.setModel(device)
+        if device:
+            self.form.setModel(["%s/%s" % (device, attribute)
+                                for attribute in self.attrs])
+            # attrname = "%s/%s" % (device, "Delivered_Voltage")
+            # self.valuebar.setModel(attrname)
+            # # self.state_button.setModel(device)
+            # attr = Attribute(attrname)
+            # self.current_label.setText("%s [%s]" % (attr.label, attr.unit))
+        else:
+            self.form.setModel(None)
+            #self.valuebar.setModel(None)
+
+class MikMagnetPanel(TaurusWidget):
+    '''Allows directly controlling the MIK power supply'''
+    attrs = ["Magnet_temp1", "Magnet_temp2", "Magnet_temp3", "Magnet_temp4", ]
+
+    def __init__(self, parent=None):
+        TaurusWidget.__init__(self, parent)
+        self._setup_ui()
+
+    def _setup_ui(self):
+        hbox = QtGui.QHBoxLayout(self)
+        self.setLayout(hbox)
+        form_vbox = QtGui.QVBoxLayout(self)
+
+        # devicename label
+        hbox2 = QtGui.QVBoxLayout(self)
+        self.device_and_state = DevnameAndState(self)
+        hbox2.addWidget(self.device_and_state, stretch=2)
+
+        # attributes
+        self.form = MAXForm(withButtons=False)
+
+        form_vbox.addWidget(self.form, stretch=1)
+        self.status_area = StatusArea()
+        form_vbox.addWidget(self.status_area)
+        hbox.addLayout(form_vbox)
+
+    def setModel(self, device):
+        print self.__class__.__name__, "setModel", device
+        TaurusWidget.setModel(self, device)
+        self.device_and_state.setModel(device)
+        self.status_area.setModel(device)
+        if device:
+            self.form.setModel(["%s/%s" % (device, attribute)
+                                for attribute in self.attrs])
+            attrname = "%s/%s" % (device, "Voltage")
+            # self.state_button.setModel(device)
+            attr = Attribute(attrname)
+            #self.current_label.setText("%s [%s]" % (attr.label, attr.unit))
+        else:
+            self.form.setModel(None)
+
 
 class PowerSupplyPanel(TaurusWidget):
     "Allows directly controlling the power supply connected to the circuit"

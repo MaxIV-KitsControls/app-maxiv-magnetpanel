@@ -6,13 +6,13 @@ except ImportError:
 import sys
 import PyTango
 # Taurus imports
-from taurus.qt import QtGui
-from taurus.qt.qtgui.panel import TaurusWidget
+from taurus.external.qt import QtGui
+from taurus.qt.qtgui.container import TaurusWidget
 # MagnetPanel imports
 from magnetpanel.utils.widgets import TaurusLazyQTabWidget
 from magnetpanel.widget.panels import MagnetCircuitPanel, MagnetListPanel
 from magnetpanel.widget.panels import CyclePanel, FieldPanel, PowerSupplyPanel
-from magnetpanel.widget.panels import BinpPowerSupplyPanel, SwitchBoardPanel
+from magnetpanel.widget.panels import BinpPowerSupplyPanel, SwitchBoardPanel, MikPowerSupplyPanel, MikMagnetPanel
 
 from taurus.qt.qtgui.button import TaurusCommandButton
 
@@ -50,8 +50,25 @@ def make_binpps_panel(widget):
     # default view is circuit
     widget.tabs.setCurrentIndex(widget.circuit_tab)
 
+def make_mikps_panel(widget):
+    """ Switch PowerSupplyPanel to BinpPowerSupplyPanel """
+    widget.ps_widget = MikPowerSupplyPanel()
+    # remove previous PS panel
+    widget.tabs.removeTab(widget.ps_tab)
+    # set New one
+    widget.ps_tab = widget.tabs.insertTab(0, widget.ps_widget, "Power supply")
+    # default view is power supply
+    widget.tabs.setCurrentIndex(widget.ps_tab)
 
-
+def make_mikmagnet_panel(widget):
+    """ Switch MagnetListPanel to MikMagnetPanel """
+    widget.magnets_widget = MikMagnetPanel()
+    # remove previous PS panel
+    widget.tabs.removeTab(widget.magnets_tab)
+    # set New one
+    widget.magnets_tab = widget.tabs.insertTab(1, widget.magnets_widget, "Magnet")
+    # default view is power supply
+    widget.tabs.setCurrentIndex(widget.ps_tab)
 
 class MagnetPanel(TaurusWidget):
     """This is the main panel that collects all the specific widgets above
@@ -133,6 +150,22 @@ class MagnetPanel(TaurusWidget):
                 hack_circuitpanel(self, ps)
                 self.resize(700, 500)
             self.tabs.setModel([model, ps, model, model, model])
+        elif devclass == "MikDevice":  # MIK
+            self.setWindowTitle("MIK panel: %s" % model)
+            # remove all tabs in order
+            self.tabs.removeTab(self.field_tab)
+            self.tabs.removeTab(self.cycle_tab)
+            self.tabs.removeTab(self.magnets_tab)
+            self.tabs.removeTab(self.ps_tab)
+            self.tabs.removeTab(self.circuit_tab)
+            # add back PS and magnet
+            self.ps_tab = self.tabs.addTab(self.ps_widget, "Power supply")
+            self.magnets_tab = self.tabs.addTab(self.magnets_widget, "Magnet")
+            make_mikps_panel(self)
+            make_mikmagnet_panel(self)
+            self.resize(700, 600)
+            self.tabs.setModel([model, model])
+
         else:
             self.circuit_widget.setModel(None)
             self.cycle_widget.setModel(None)
