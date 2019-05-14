@@ -6,10 +6,15 @@ except ImportError:
 import sys
 import PyTango
 
-from taurus.qt import QtCore, QtGui
+try:
+    from taurus.qt import QtCore, QtGui
+    from taurus.qt.qtgui.panel import TaurusWidget
+except ImportError:
+    from taurus.external.qt import QtCore, QtGui
+    from taurus.qt.qtgui.container import TaurusWidget
+
 from taurus import Attribute
 
-from taurus.qt.qtgui.panel import TaurusWidget
 from taurus.qt.qtgui.display import TaurusLabel
 from taurus.qt.qtgui.button import TaurusCommandButton
 from taurus.qt.qtgui.plot import TaurusTrend
