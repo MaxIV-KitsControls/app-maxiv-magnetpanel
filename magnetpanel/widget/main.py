@@ -6,8 +6,13 @@ except ImportError:
 import sys
 import PyTango
 # Taurus imports
-from taurus.qt import QtGui
-from taurus.qt.qtgui.panel import TaurusWidget
+try:
+    from taurus.qt import QtGui
+    from taurus.qt.qtgui.panel import TaurusWidget
+except ImportError:
+    from taurus.external.qt import QtGui
+    from taurus.qt.qtgui.container import TaurusWidget
+
 # MagnetPanel imports
 from magnetpanel.utils.widgets import TaurusLazyQTabWidget
 from magnetpanel.widget.panels import MagnetCircuitPanel, MagnetListPanel

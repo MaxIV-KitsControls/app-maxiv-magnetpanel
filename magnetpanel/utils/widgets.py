@@ -4,9 +4,17 @@ except ImportError:
     from defaultdict import defaultdict
 from math import isnan
 
-from taurus.qt import QtCore, QtGui
-from taurus.qt.qtgui.panel import TaurusWidget, TaurusForm
-from taurus.qt.qtgui.display import TaurusLabel
+try:
+    from taurus.qt import QtCore, QtGui
+    from taurus.qt.qtgui.panel import TaurusWidget, TaurusForm
+    from taurus.qt.qtgui.display import TaurusLabel
+
+except ImportError:
+    from taurus.external.qt import QtCore, QtGui
+    from taurus.qt.qtgui.container import TaurusWidget
+    from taurus.qt.qtgui.panel import TaurusForm
+    from taurus.qt.qtgui.display import TaurusLabel
+
 from taurus import Attribute
 import PyTango
 
