@@ -41,8 +41,8 @@ class TableItem(QtGui.QTableWidgetItem):
     @property
     def writable_boolean(self):
         return (self.value is not None and
-                self.value.type == PyTango.CmdArgType.DevBoolean and
-                self.value.w_value is not None)
+                self.config.type == 3 and  # DevBoolean
+                self.value.wvalue is not None)
 
     def event_received(self, evt_src, evt_type, evt_value):
         if evt_type in [PyTango.EventType.CHANGE_EVENT,
@@ -50,8 +50,8 @@ class TableItem(QtGui.QTableWidgetItem):
             self.value = evt_value
             self.source = evt_src
             self.trigger.emit(self.row(), self.column())
-        if hasattr(evt_value, "format"):
-            self.config = evt_value
+        if hasattr(evt_src, "format_spec"):
+            self.config = evt_src
 
 
 class AttributeColumnsTable(TaurusWidget):
@@ -275,25 +275,27 @@ class DeviceRowsTable(TaurusWidget):
         value, config = item.value, item.config
 
         # Set text
-        if config and config.format != "Not specified":
-            item.setText(config.format % value.value)
+        if (config and config.format_spec != "Not specified") and \
+                (config.format_spec != "!s"):
+            data_format = "%" + config.format_spec
+            item.setText(data_format % value.rvalue)
         else:
-            item.setText(str(value.value))
+            item.setText(str(value.rvalue))
 
         # Set flags and state
         if item.writable_boolean:
             item.setFlags(QtCore.Qt.ItemIsSelectable
                           | QtCore.Qt.ItemIsEnabled
                           | QtCore.Qt.ItemIsUserCheckable)
-            state = QtCore.Qt.Checked if value.w_value else QtCore.Qt.Unchecked
+            state = QtCore.Qt.Checked if value.wvalue else QtCore.Qt.Unchecked
             item.setCheckState(state)
         else:
             item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         # Set background color
-        if value.type == PyTango.CmdArgType.DevState:
-            if value.value in self.STATE_COLORS:
-                item.setBackgroundColor(QtGui.QColor(*self.STATE_COLORS[value.value]))
+        if config.type == 5: # DevState
+            if value.rvalue in self.STATE_COLORS:
+                item.setBackgroundColor(QtGui.QColor(*self.STATE_COLORS[value.rvalue]))
 
     def on_item_clicked(self, item):
         # Not a writable item
@@ -443,7 +445,7 @@ class ToggleButton(TaurusWidget):
         pressed = self.state.read().value == self._state
         print "pressed", pressed
         if pressed:
-            print "running up_commnad", self._up_command
+            print "running up_command", self._up_command
             self.up_command()
         else:
             print "running down_command", self._down_command
