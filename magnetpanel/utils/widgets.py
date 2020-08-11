@@ -32,7 +32,7 @@ class AttributeColumn(object):
 class TableItem(QtGui.QTableWidgetItem):
 
     def __init__(self, trigger):
-	self.trigger = trigger
+        self.trigger = trigger
         self.value = None
         self.config = None
         self.source = None
@@ -41,8 +41,8 @@ class TableItem(QtGui.QTableWidgetItem):
     @property
     def writable_boolean(self):
         return (self.value is not None and
-                self.value.type == PyTango.CmdArgType.DevBoolean and
-                self.value.w_value is not None)
+                self.config.type == 3 and  # DevBoolean
+                self.value.wvalue is not None)
 
     def event_received(self, evt_src, evt_type, evt_value):
         if evt_type in [PyTango.EventType.CHANGE_EVENT,
@@ -50,8 +50,9 @@ class TableItem(QtGui.QTableWidgetItem):
             self.value = evt_value
             self.source = evt_src
             self.trigger.emit(self.row(), self.column())
-        if hasattr(evt_value, "format"):
-            self.config = evt_value
+        if hasattr(evt_src, "format_spec"):
+            self.config = evt_src
+
 
 class AttributeColumnsTable(TaurusWidget):
 
@@ -122,7 +123,7 @@ class AttributeColumnsTable(TaurusWidget):
                 pass
 
     def keyPressEvent(self, e):
-        "Copy selected cells to the clipboard on Ctrl+C"
+        """Copy selected cells to the clipboard on Ctrl+C"""
         if (e.modifiers() & QtCore.Qt.ControlModifier):
             selected = self.table.selectedRanges()
             if e.key() == QtCore.Qt.Key_C:
@@ -139,7 +140,7 @@ class AttributeColumnsTable(TaurusWidget):
 
     def onEvent(self, column, evt_src, evt_type, evt_value):
         if evt_type in [PyTango.EventType.CHANGE_EVENT,
-                    PyTango.EventType.PERIODIC_EVENT]:
+                        PyTango.EventType.PERIODIC_EVENT]:
             self._values[column] = evt_value
             self.trigger.emit(column)
         if isinstance(evt_value, PyTango.DeviceAttributeConfig):
@@ -212,7 +213,7 @@ class DeviceRowsTable(TaurusWidget):
         self.attributes = {}
 
     def keyPressEvent(self, e):
-        "Copy selected cells to the clipboard on Ctrl+C"
+        """Copy selected cells to the clipboard on Ctrl+C"""
         if (e.modifiers() & QtCore.Qt.ControlModifier):
             selected = self.table.selectedRanges()
             if e.key() == QtCore.Qt.Key_C:
@@ -235,7 +236,7 @@ class DeviceRowsTable(TaurusWidget):
                         self._items[dev][att.name].event_received)
         else:
             try:
-                #TaurusWidget.setModel(self, attrs[0].rsplit("/", 1)[0])
+                # TaurusWidget.setModel(self, attrs[0].rsplit("/", 1)[0])
                 attrnames = [a[0] if isinstance(a, tuple) else a
                              for a in attributes]
                 self.attributes = dict((dev, [Attribute("%s/%s" % (dev, a))
@@ -274,31 +275,32 @@ class DeviceRowsTable(TaurusWidget):
         value, config = item.value, item.config
 
         # Set text
-        if config and config.format != "Not specified":
-            item.setText(config.format % value.value)
+        if (config and config.format_spec != "Not specified") and \
+                (config.format_spec != "!s"):
+            data_format = "%" + config.format_spec
+            item.setText(data_format % value.rvalue)
         else:
-            item.setText(str(value.value))
+            item.setText(str(value.rvalue))
 
-	# Set flags and state
+        # Set flags and state
         if item.writable_boolean:
             item.setFlags(QtCore.Qt.ItemIsSelectable
                           | QtCore.Qt.ItemIsEnabled
                           | QtCore.Qt.ItemIsUserCheckable)
-            state = QtCore.Qt.Checked if value.w_value else QtCore.Qt.Unchecked
+            state = QtCore.Qt.Checked if value.wvalue else QtCore.Qt.Unchecked
             item.setCheckState(state)
-	else:
+        else:
             item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         # Set background color
-        if value.type == PyTango.CmdArgType.DevState:
-            if value.value in self.STATE_COLORS:
-                item.setBackgroundColor(QtGui.QColor(*self.STATE_COLORS[value.value]))
-
+        if config.type == 5: # DevState
+            if value.rvalue in self.STATE_COLORS:
+                item.setBackgroundColor(QtGui.QColor(*self.STATE_COLORS[value.rvalue]))
 
     def on_item_clicked(self, item):
         # Not a writable item
         if not isinstance(item, TableItem) or not item.writable_boolean:
-	    return
+            return
         button_state = (item.checkState() == QtCore.Qt.Checked)
         value_state = item.value.w_value
         if button_state != value_state:
@@ -324,8 +326,8 @@ class DevnameAndState(TaurusWidget):
 
         grid.addWidget(QtGui.QLabel("State:"), 1, 0)
         hbox = QtGui.QHBoxLayout(self)
-        #self.state_led = TaurusLed()
-        #hbox.addWidget(self.state_led)
+        # self.state_led = TaurusLed()
+        # hbox.addWidget(self.state_led)
         self.state_label = TaurusLabel()
         policy = QtGui.QSizePolicy()
         self.state_label.setBgRole("state")
@@ -333,7 +335,7 @@ class DevnameAndState(TaurusWidget):
         self.state_label.setSizePolicy(policy)
 
         hbox.addWidget(self.state_label)
-        #hbox.insertStretch(2, 1)
+        # hbox.insertStretch(2, 1)
 
         grid.addLayout(hbox, 1, 1, alignment=QtCore.Qt.AlignLeft)
         grid.setColumnStretch(1, 1)
@@ -341,7 +343,7 @@ class DevnameAndState(TaurusWidget):
     def setModel(self, device):
         TaurusWidget.setModel(self, device)
         self.devicename_label.setText("<b>%s</b>" % device)
-        #self.state_led.setModel("%s/State" % device)
+        # self.state_led.setModel("%s/State" % device)
         if device:
             self.state_label.setModel("%s/State" % device)
         else:
@@ -418,7 +420,7 @@ class ToggleButton(TaurusWidget):
         self.setLayout(hbox)
 
         self.button = QtGui.QPushButton()
-        #self.button.setText()
+        # self.button.setText()
         self.button.setCheckable(True)
         hbox.addWidget(self.button)
 
@@ -443,7 +445,7 @@ class ToggleButton(TaurusWidget):
         pressed = self.state.read().value == self._state
         print "pressed", pressed
         if pressed:
-            print "running up_commnad", self._up_command
+            print "running up_command", self._up_command
             self.up_command()
         else:
             print "running down_command", self._down_command
@@ -471,7 +473,7 @@ class TaurusLazyQTabWidget(QtGui.QTabWidget):
         super(self.__class__, self).__init__(parent)
         self.models = []
         self.currentChanged.connect(self._tab_changed)
-        #self.current_tab = None
+        # self.current_tab = None
 
     def setModel(self, models):
         # In order for this to work, each tab must contain just one Taurus
@@ -497,14 +499,14 @@ class TaurusLazyQTabWidget(QtGui.QTabWidget):
                 model = self.models[tab_index]
                 if not tab.getModel():
                     tab.setModel(model)
-                #self.current_tab = tab
+                # self.current_tab = tab
 
 
 if __name__ == "__main__":
     import sys
     from taurus.qt.qtgui.application import TaurusApplication
     app = TaurusApplication(sys.argv)
-    #w = StatusArea()
+    # w = StatusArea()
     w = DevnameAndState()
     w.setModel(sys.argv[1])
     w.show()
