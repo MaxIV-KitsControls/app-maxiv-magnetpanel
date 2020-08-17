@@ -1,4 +1,3 @@
-
 from taurus.qt.qtgui.input import TaurusValueLineEdit
 from taurus.qt.qtgui.panel import TaurusForm
 
@@ -13,12 +12,12 @@ class MAXForm(TaurusForm):
     custom TaurusValue widgets for som commonly used device classes.
     """
 
-    widgetMap = {'GammaSPCe': ('maxwidgets.panel.GammaSPCeTV', (), {})}
+    widgetMap = {"GammaSPCe": ("maxwidgets.panel.GammaSPCeTV", (), {})}
 
     def __init__(self, *args, **kwargs):
 
-        if 'withButtons' not in kwargs:
-            kwargs['withButtons'] = False
+        if "withButtons" not in kwargs:
+            kwargs["withButtons"] = False
 
         TaurusForm.__init__(self, *args, **kwargs)
         self._defaultFormWidget = ResettableTaurusValue
@@ -38,7 +37,7 @@ class MAXForm(TaurusForm):
                 widget.writeWidget().setEnableWheelEvent(True)
 
     def setFontSize(self, size):
-        self.setStyleSheet('QLabel,QLineEdit {font-size: %dpt;}' % size)
+        self.setStyleSheet("QLabel,QLineEdit {font-size: %dpt;}" % size)
 
         # for widget in self:
         #     print "setFontSize", size, widget
@@ -49,7 +48,7 @@ class MAXForm(TaurusForm):
 
         #     if widget.readWidget():
         #         widget.readWidget()\
-        #.setStyleSheet('QLabel {font-size: %dpt;}' % size)
+        #.setStyleSheet("QLabel {font-size: %dpt;}" % size)
 
 
 def main():
@@ -74,5 +73,5 @@ def main():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

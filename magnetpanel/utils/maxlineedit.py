@@ -1,17 +1,12 @@
-import taurus
 from taurus.external.qt import Qt, QtCore, QtGui
 from taurus.qt.qtgui.input import TaurusValueLineEdit
 
-try:
-    from taurus.qt.qtgui.panel import TaurusWidget
-except ImportError:
-    from taurus.qt.qtgui.container import TaurusWidget
+from taurus.qt.qtgui.container import TaurusWidget
 
-import PyTango
+import tango
 
 
-class MAXLineEdit (TaurusValueLineEdit):
-
+class MAXLineEdit(TaurusValueLineEdit):
     """A TaurusValueLineEdit tweaked to fit MAXIV purposes. Changes:
 
     - The current digit (left of the cursor) can be in- or decremented
@@ -38,7 +33,8 @@ class MAXLineEdit (TaurusValueLineEdit):
         self._throttle_timer = QtCore.QTimer()
         self._throttle_timer.setInterval(200)
         self._throttle_timer.setSingleShot(True)
-        self.connect(self._throttle_timer, QtCore.SIGNAL("timeout()"), self._writeValue)
+        # self.connect(self._throttle_timer, QtCore.SIGNAL("timeout()"), self._writeValue)
+        self._throttle_timer.timeout.connect(self._writeValue)
         self.w_value_trigger.connect(self._updateWriteValue)
 
     def _stepBy(self, steps):
@@ -49,10 +45,10 @@ class MAXLineEdit (TaurusValueLineEdit):
         text = str(self.text())
         cursor = len(text) - self.cursorPosition()
 
-        if '.' not in self.text():
+        if "." not in self.text():
             decimal = 0
         else:
-            decimal = len(text) - text.find('.') - 1
+            decimal = len(text) - text.find(".") - 1
 
         if cursor == decimal:
             return
@@ -63,9 +59,9 @@ class MAXLineEdit (TaurusValueLineEdit):
         if cursor > decimal:
             exp -= 1
 
-        delta = 10**exp
+        delta = 10 ** exp
 
-        TaurusValueLineEdit._stepBy(self, steps*delta)
+        TaurusValueLineEdit._stepBy(self, steps * delta)
         self.setCursorPosition(len(self.text()) - cursor)
         if self._autoApply:
             self.writeValue()  # this seems a but risky...
@@ -86,26 +82,26 @@ class MAXLineEdit (TaurusValueLineEdit):
 
     def handleEvent(self, evt_src, evt_type, evt_value):
         TaurusValueLineEdit.handleEvent(self, evt_src, evt_type, evt_value)
-        if evt_type in (PyTango.EventType.PERIODIC_EVENT,
-                        PyTango.EventType.CHANGE_EVENT):
-                        # taurus.core.taurusbasetypes.TaurusEventType.Periodic,
-                        # taurus.core.taurusbasetypes.TaurusEventType.Change):
+        if evt_type in (tango.EventType.PERIODIC_EVENT,
+                        tango.EventType.CHANGE_EVENT):
+            # taurus.core.taurusbasetypes.TaurusEventType.Periodic,
+            # taurus.core.taurusbasetypes.TaurusEventType.Change):
             if not self._focus:
                 self._w_value = evt_value.w_value
                 self.w_value_trigger.emit()
-        elif evt_type in (PyTango.EventType.ATTR_CONF_EVENT,
-                          PyTango.EventType.QUALITY_EVENT):
+        elif evt_type in (tango.EventType.ATTR_CONF_EVENT,
+                          tango.EventType.QUALITY_EVENT):
             # update the wheel delta to correspond to the LSD
             digits = self._decimalDigits(evt_value.format)
             if digits is not None:
                 self._wheel_delta = pow(10, -digits)
 
     def _decimalDigits(self, fmt):
-        '''returns the number of decimal digits from a format string
-        (or None if they are not defined)'''
+        """returns the number of decimal digits from a format string
+        (or None if they are not defined)"""
         try:
-            if fmt[-1].lower() in ['f', 'g'] and '.' in fmt:
-                return int(fmt[:-1].split('.')[-1])
+            if fmt[-1].lower() in ["f", "g"] and "." in fmt:
+                return int(fmt[:-1].split(".")[-1])
             else:
                 return None
         except:
@@ -142,13 +138,13 @@ class MAXLineEdit (TaurusValueLineEdit):
 
         # change the value by 1 in the least significant digit according
         # to the configured format.
-        self.throttledWrite(numSteps*self._wheel_delta)
+        self.throttledWrite(numSteps * self._wheel_delta)
 
     @classmethod
     def getQtDesignerPluginInfo(cls):
         ret = TaurusValueLineEdit.getQtDesignerPluginInfo()
-        ret['group'] = 'MAX-lab Taurus Widgets'
-        ret['module'] = 'maxwidgets.input'
+        ret["group"] = "MAX-lab Taurus Widgets"
+        ret["module"] = "maxwidgets.input"
         return ret
 
     def resetInitialValue(self):

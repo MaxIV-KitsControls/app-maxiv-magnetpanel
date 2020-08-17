@@ -1,32 +1,18 @@
-try:
-    from collections import defaultdict
-except ImportError:
-    from defaultdict import defaultdict
-
-import sys
-import PyTango
-
-try:
-    from taurus.qt import QtCore, QtGui
-    from taurus.qt.qtgui.panel import TaurusWidget
-except ImportError:
-    from taurus.external.qt import QtCore, QtGui
-    from taurus.qt.qtgui.container import TaurusWidget
-
-from taurus import Attribute
-
-from taurus.qt.qtgui.display import TaurusLabel
-from taurus.qt.qtgui.button import TaurusCommandButton
-from taurus.qt.qtgui.plot import TaurusTrend
+import tango
 from maxwidgets.display import MAXValueBar
+from taurus import Attribute
+from taurus.external.qt import QtCore, QtGui
+from taurus.qt.qtgui.button import TaurusCommandButton
+from taurus.qt.qtgui.container import TaurusWidget
+from taurus.qt.qtgui.display import TaurusLabel
+from taurus.qt.qtgui.plot import TaurusTrend
+
 from magnetpanel.utils.maxfrom import MAXForm
-from magnetpanel.utils.switchboard import SwitchBoardPanel
-from magnetpanel.utils.widgets import (AttributeColumnsTable, DeviceRowsTable,
-                     DevnameAndState, StatusArea, TaurusLazyQTabWidget)
+from magnetpanel.utils.widgets import AttributeColumnsTable, DeviceRowsTable, DevnameAndState, StatusArea
 
 
 class BinpPowerSupplyPanel(TaurusWidget):
-    "Allows directly controlling the BINP power supply connected to the circuit"
+    """Allows directly controlling the BINP power supply connected to the circuit"""
     attrs = ["Voltage"]
 
     def __init__(self, parent=None):
@@ -92,24 +78,24 @@ class BinpPowerSupplyPanel(TaurusWidget):
         slider_vbox.addWidget(self.current_label)
 
     def setModel(self, device):
-        print self.__class__.__name__, "setModel", device
+        print(self.__class__.__name__, "setModel", device)
         TaurusWidget.setModel(self, device)
         self.device_and_state.setModel(device)
         self.status_area.setModel(device)
         if device:
-            self.form.setModel(["%s/%s" % (device, attribute)
-                                for attribute in self.attrs])
-            attrname = "%s/%s" % (device, "Voltage")
+            self.form.setModel([f"{device}/{attribute}" for attribute in self.attrs])
+            attrname = f"{device}/Voltage"
             self.valuebar.setModel(attrname)
             # self.state_button.setModel(device)
             attr = Attribute(attrname)
-            self.current_label.setText("%s [%s]" % (attr.label, attr.unit))
+            self.current_label.setText(f"{attr.label} [{attr.unit}]")
         else:
             self.form.setModel(None)
             self.valuebar.setModel(None)
 
+
 class PowerSupplyPanel(TaurusWidget):
-    "Allows directly controlling the power supply connected to the circuit"
+    """Allows directly controlling the power supply connected to the circuit"""
     attrs = ["Current", "Voltage", "Resistance"]
 
     def __init__(self, parent=None):
@@ -160,25 +146,24 @@ class PowerSupplyPanel(TaurusWidget):
         slider_vbox.addWidget(self.current_label)
 
     def setModel(self, device):
-        print self.__class__.__name__, "setModel", device
+        print(self.__class__.__name__, "setModel", device)
         TaurusWidget.setModel(self, device)
         self.device_and_state.setModel(device)
         self.status_area.setModel(device)
         if device:
-            self.form.setModel(["%s/%s" % (device, attribute)
-                                for attribute in self.attrs])
-            attrname = "%s/%s" % (device, "Current")
+            self.form.setModel([f"{device}/{attribute}" for attribute in self.attrs])
+            attrname = f"{device}/Current"
             self.valuebar.setModel(attrname)
             # self.state_button.setModel(device)
             attr = Attribute(attrname)
-            self.current_label.setText("%s [%s]" % (attr.label, attr.unit))
+            self.current_label.setText(f"{attr.label} [{attr.unit}]")
         else:
             self.form.setModel(None)
             self.valuebar.setModel(None)
 
 
 class MagnetCircuitPanel(TaurusWidget):
-    "Displays the important attributes of the circuit device"
+    """Displays the important attributes of the circuit device"""
 
     attrs = ["energy", "MainFieldComponent", "PowerSupplyReadValue", "PowerSupplySetPoint",
              "fixNormFieldOnEnergyChange"]
@@ -220,20 +205,19 @@ class MagnetCircuitPanel(TaurusWidget):
         slider_vbox.addWidget(self.current_label)
 
     def setModel(self, device):
-        print self.__class__.__name__, "setModel", device
+        print(self.__class__.__name__, "setModel", device)
         TaurusWidget.setModel(self, device)
         self.device_and_state.setModel(device)
         if device:
-            self.form.setModel(["%s/%s" % (device, attribute)
-                                for attribute in self.attrs])
-            db = PyTango.Database()
+            self.form.setModel([f"{device}/{attribute}" for attribute in self.attrs])
+            db = tango.Database()
             magnet = db.get_device_property(device, "MagnetProxies")["MagnetProxies"][0]
-            magnet_type = PyTango.Database().get_device_property(magnet, "Type")["Type"][0]
-            self.magnet_type_label.setText("Magnet type: <b>%s</b>" % magnet_type)
-            attrname = "%s/%s" % (device, "MainFieldComponent")
+            magnet_type = tango.Database().get_device_property(magnet, "Type")["Type"][0]
+            self.magnet_type_label.setText(f"Magnet type: <b>{magnet_type}</b>")
+            attrname = f"{device}/MainFieldComponent"
             self.valuebar.setModel(attrname)
             attr = Attribute(attrname)
-            self.current_label.setText("%s [%s]" % (attr.label, attr.unit))
+            self.current_label.setText(f"{attr.label} [{attr.unit}]")
             self.status_area.setModel(device)
         else:
             self.form.setModel(None)
@@ -242,7 +226,7 @@ class MagnetCircuitPanel(TaurusWidget):
 
 
 class CyclePanel(TaurusWidget):
-    "Panel for controlling the cycling functionality"
+    """Panel for controlling the cycling functionality"""
 
     trend_trigger = QtCore.pyqtSignal(bool)
 
@@ -282,27 +266,26 @@ class CyclePanel(TaurusWidget):
 
         vbox.addLayout(grid)
 
-        self.trend = TaurusTrend()
-        vbox.addWidget(self.trend, stretch=1)
-        self.trend_trigger.connect(self.set_trend_paused)
+        # self.trend = TaurusTrend()
+        # vbox.addWidget(self.trend, stretch=1)
+        # self.trend_trigger.connect(self.set_trend_paused)
 
         self.cyclingState = None
 
     def setModel(self, device):
-        print self.__class__.__name__, "setModel", device
+        print(self.__class__.__name__, "setModel", device)
         TaurusWidget.setModel(self, device)
         # self.state_button.setModel(device)
         if device:
-            self.form.setModel(["%s/%s" % (device, attribute)
-                                for attribute in self.attrs])
+            self.form.setModel([f"{device}/{attribute}" for attribute in self.attrs])
 
-            self.status_label.setModel("%s/cyclingStatus" % device)
+            self.status_label.setModel(f"{device}/cyclingStatus")
 
-            ps = str(PyTango.Database().get_device_property(
+            ps = str(tango.Database().get_device_property(
                 device, "PowerSupplyProxy")["PowerSupplyProxy"][0])
 
             self.trend.setPaused()
-            self.trend.setModel(["%s/Current" % ps])
+            self.trend.setModel([f"{ps}/Current"])
             self.trend.setForcedReadingPeriod(0.2)
             self.trend.showLegend(True)
 
@@ -316,8 +299,8 @@ class CyclePanel(TaurusWidget):
             self.status_label.setModel(None)
 
     def handle_cycling_state(self, evt_src, evt_type, evt_value):
-        if evt_type in [PyTango.EventType.CHANGE_EVENT,
-                        PyTango.EventType.PERIODIC_EVENT]:
+        if evt_type in [tango.EventType.CHANGE_EVENT,
+                        tango.EventType.PERIODIC_EVENT]:
             self.trend_trigger.emit(evt_value.value)
 
     def set_trend_paused(self, value):
@@ -352,14 +335,14 @@ class FieldPanel(TaurusWidget):
         self.table = AttributeColumnsTable(parent=self)
         vbox.addWidget(self.table)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.pyqtSlot(int)
     def _magnet_selected(self, i):
         magnet = self.magnet_combobox.itemText(i)
         if magnet:
-            magnet_models = ["%s/fieldA" % magnet,
-                             "%s/fieldB" % magnet,
-                             "%s/fieldAnormalised" % magnet,
-                             "%s/fieldBnormalised" % magnet]
+            magnet_models = [f"{magnet}/fieldA",
+                             f"{magnet}/fieldB",
+                             f"{magnet}/fieldAnormalised",
+                             f"{magnet}/fieldBnormalised"]
             self.table.setModel(magnet_models)
 
     def setModel(self, circuit, magnet=None):
@@ -368,13 +351,13 @@ class FieldPanel(TaurusWidget):
             self.magnet_combobox.clear()
             self.table.setModel(None)
         else:
-            db = PyTango.Database()
+            db = tango.Database()
             magnets = db.get_device_property(circuit, "MagnetProxies")["MagnetProxies"]
             self.magnet_combobox.addItems(magnets)
 
 
 class MagnetListPanel(TaurusWidget):
-    "Shows all magnets in the circuit, with state and interlocks, in a table"
+    """Shows all magnets in the circuit, with state and interlocks, in a table"""
 
     def __init__(self, parent=None):
         TaurusWidget.__init__(self, parent)
@@ -392,9 +375,9 @@ class MagnetListPanel(TaurusWidget):
         vbox.addWidget(self.table)
 
     def setModel(self, circuit):
-        print "MagnetListPanel setModel", circuit
+        print("MagnetListPanel setModel", circuit)
         TaurusWidget.setModel(self, circuit)
-        db = PyTango.Database()
+        db = tango.Database()
         if circuit:
             magnets = db.get_device_property(circuit, "MagnetProxies")["MagnetProxies"]
             if "SQF" in magnets[0]:

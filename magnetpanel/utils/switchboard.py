@@ -1,30 +1,32 @@
-from taurus.external.qt import QtCore
-from taurus.qt.qtgui.util import UILoadable
-from taurus.qt.qtgui.container import TaurusWidget
-
 from collections import defaultdict
+
+from taurus.external.qt import QtCore
+from taurus.qt.qtgui.container import TaurusWidget
+from taurus.qt.qtgui.util import UILoadable
+
 from magnetpanel.resource import rc_switchboard
+
 # silence pep8 unused import warning
 assert rc_switchboard
 
 SEXTUPOLE_MODES = {
-    'SEXTUPOLE':         ':/sextupole/sextupole.svg',
-    'NORMAL_QUADRUPOLE': ':/sextupole/quadrupole.svg',
-    'SKEW_QUADRUPOLE':   ':/sextupole/skew_quadrupole.svg',
-    'X_CORRECTOR':       ':/sextupole/horizontal_steerer.svg',
-    'Y_CORRECTOR':       ':/sextupole/vertical_steerer.svg'
+    "SEXTUPOLE":         ":/sextupole/sextupole.svg",
+    "NORMAL_QUADRUPOLE": ":/sextupole/quadrupole.svg",
+    "SKEW_QUADRUPOLE":   ":/sextupole/skew_quadrupole.svg",
+    "X_CORRECTOR":       ":/sextupole/horizontal_steerer.svg",
+    "Y_CORRECTOR":       ":/sextupole/vertical_steerer.svg"
 }
 
 OCTUPOLE_MODES = {
-    'NORMAL_QUADRUPOLE': ':/octupole/quadrupole.svg',
-    'SKEW_QUADRUPOLE':   ':/octupole/skew_quadrupole.svg',
-    'X_CORRECTOR':       ':/octupole/horizontal_steerer.svg',
-    'Y_CORRECTOR':       ':/octupole/vertical_steerer.svg',
+    "NORMAL_QUADRUPOLE": ":/octupole/quadrupole.svg",
+    "SKEW_QUADRUPOLE":   ":/octupole/skew_quadrupole.svg",
+    "X_CORRECTOR":       ":/octupole/horizontal_steerer.svg",
+    "Y_CORRECTOR":       ":/octupole/vertical_steerer.svg",
 }
 
 BOARD_MODES = {
-    'SEXTUPOLE': defaultdict(lambda: ':/sextupole/all_off.svg', SEXTUPOLE_MODES),
-    'OCTUPOLE':  defaultdict(lambda: ':/octupole/all_off.svg', OCTUPOLE_MODES)
+    "SEXTUPOLE": defaultdict(lambda: ":/sextupole/all_off.svg", SEXTUPOLE_MODES),
+    "OCTUPOLE":  defaultdict(lambda: ":/octupole/all_off.svg", OCTUPOLE_MODES)
 }
 
 
@@ -34,15 +36,15 @@ class SwitchBoardPanel(TaurusWidget):
     typeChanged = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
-        TaurusWidget.__init__(self, parent)
+        super(TaurusWidget, self).__init__(parent)
 
         self.loadUi()
 
         self.statusLabel.setUseParentModel(True)
-        self.statusLabel.setModel('/Status')
+        self.statusLabel.setModel("/Status")
 
         self.modeCB.setUseParentModel(True)
-        self.modeCB.setModel('/Mode')
+        self.modeCB.setModel("/Mode")
 
         self.type_attribute = None
         self.mode_attribute = None
@@ -54,10 +56,10 @@ class SwitchBoardPanel(TaurusWidget):
         self.typeChanged.connect(self.onTypeChanged)
 
     def eventReceived(self, evt_src, evt_type, evt_value):
-        if not hasattr(evt_value, 'value'):
+        if not hasattr(evt_value, "value"):
             return
 
-        # We can't interact with QWidgets from here
+        # We can"t interact with QWidgets from here
         # (calling thread is not a QThread). Emit signals instead.
         if evt_src is self.type_attribute and \
            evt_value.value != self.type_value:
@@ -79,16 +81,16 @@ class SwitchBoardPanel(TaurusWidget):
 
         device = self.getModelObj()
         if device:
-            self.mode_attribute = device.getAttribute('Mode')
+            self.mode_attribute = device.getAttribute("Mode")
             self.mode_attribute.addListener(self)
-            self.type_attribute = device.getAttribute('Type')
+            self.type_attribute = device.getAttribute("Type")
             self.type_attribute.addListener(self)
 
     def onTypeChanged(self):
         # fetch list of valid mode names
         device = self.getModelObj()
         if device:
-            modes = device.command_inout('getAttrStringValueList', 'Mode')
+            modes = device.command_inout("getAttrStringValueList", "Mode")
         else:
             modes = []
         # update combo box
@@ -103,7 +105,7 @@ class SwitchBoardPanel(TaurusWidget):
         if image_map:
             svg = image_map[self.mode_value]
         else:
-            svg = ':/unknown.svg'
+            svg = ":/unknown.svg"
         self.svgWidget.load(svg)
 
 
@@ -130,5 +132,6 @@ def main():
 
     sys.exit(app.exec_())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
