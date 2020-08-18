@@ -13,5 +13,8 @@ setup(
     include_package_data=True,
     packages=find_packages(),
     package_data={"": ["*.ui"]},
-    entry_points={"console_scripts": ["cttrimcoil = magnetpanel:trimcoil_main", "ctmagnet = magnetpanel:magnet_main"]}
+    entry_points={"console_scripts": [
+        "cttrimcoil = magnetpanel:trimcoil_main",
+        "ctmagnet = magnetpanel:magnet_main"
+    ]}
 )
