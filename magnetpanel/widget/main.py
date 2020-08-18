@@ -195,16 +195,22 @@ class TrimCoilCircuitPanel(TaurusWidget):
 
 
 def magnet_main():
-    from taurus.qt.qtgui.application import TaurusApplication
     import sys
 
+    from taurus.core.util import argparse
+    from taurus.qt.qtgui.application import TaurusApplication
+
     set_polling_period(1000)
-    app = TaurusApplication(sys.argv)
+
+    parser = argparse.get_taurus_parser()
+    parser.set_usage("%prog [model1]")
+
+    app = TaurusApplication(cmd_line_parser=parser)
     args = app.get_command_line_args()
 
     w = MagnetPanel()
     # w = TrimCoilCircuitPanel()
-    print(args)
+
     if len(args) > 0:
         w.setModel(args[0])
     app.setCursorFlashTime(0)
@@ -214,14 +220,19 @@ def magnet_main():
 
 
 def trimcoil_main():
-    from taurus.qt.qtgui.application import TaurusApplication
     import sys
 
-    app = TaurusApplication(sys.argv)
+    from taurus.core.util import argparse
+    from taurus.qt.qtgui.application import TaurusApplication
+
+    parser = argparse.get_taurus_parser()
+    parser.set_usage("%prog [model1]")
+
+    app = TaurusApplication(cmd_line_parser=parser)
     args = app.get_command_line_args()
 
     w = TrimCoilCircuitPanel()
-    print(args)
+
     if len(args) > 0:
         w.setModel(args[0])
     app.setCursorFlashTime(0)
