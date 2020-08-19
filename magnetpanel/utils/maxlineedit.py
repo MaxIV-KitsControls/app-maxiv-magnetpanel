@@ -87,7 +87,7 @@ class MAXLineEdit(TaurusValueLineEdit):
             # taurus.core.taurusbasetypes.TaurusEventType.Periodic,
             # taurus.core.taurusbasetypes.TaurusEventType.Change):
             if not self._focus:
-                self._w_value = evt_value.w_value
+                self._w_value = evt_value.wvalue
                 self.w_value_trigger.emit()
         elif evt_type in (tango.EventType.ATTR_CONF_EVENT,
                           tango.EventType.QUALITY_EVENT):

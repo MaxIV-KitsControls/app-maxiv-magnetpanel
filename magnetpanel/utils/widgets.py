@@ -286,7 +286,7 @@ class DeviceRowsTable(TaurusWidget):
         if not isinstance(item, TableItem) or not item.writable_boolean:
             return
         button_state = (item.checkState() == QtCore.Qt.Checked)
-        value_state = item.value.w_value
+        value_state = item.value.wvalue
         if button_state != value_state:
             item.source.write(button_state)
 
@@ -375,7 +375,7 @@ class StatusArea(TaurusWidget):
     def onStatusChange(self, evt_src, evt_type, evt_value):
         if evt_type in [tango.EventType.CHANGE_EVENT,
                         tango.EventType.PERIODIC_EVENT]:
-            self.statusTrigger.emit(evt_value.value)
+            self.statusTrigger.emit(evt_value.rvalue)
 
     def updateStatus(self, status):
         self.status_label.setText(status)

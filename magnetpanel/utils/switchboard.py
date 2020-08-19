@@ -56,19 +56,19 @@ class SwitchBoardPanel(TaurusWidget):
         self.typeChanged.connect(self.onTypeChanged)
 
     def eventReceived(self, evt_src, evt_type, evt_value):
-        if not hasattr(evt_value, "value"):
+        if not hasattr(evt_value, "rvalue"):
             return
 
         # We can"t interact with QWidgets from here
         # (calling thread is not a QThread). Emit signals instead.
         if evt_src is self.type_attribute and \
-           evt_value.value != self.type_value:
-            self.type_value = evt_value.value
+           evt_value.rvalue != self.type_value:
+            self.type_value = evt_value.rvalue
             self.typeChanged.emit()
 
         if evt_src is self.mode_attribute and \
-           evt_value.value != self.mode_value:
-            self.mode_value = evt_value.value
+           evt_value.rvalue != self.mode_value:
+            self.mode_value = evt_value.rvalue
             self.modeChanged.emit()
 
     def onModelChanged(self, model):

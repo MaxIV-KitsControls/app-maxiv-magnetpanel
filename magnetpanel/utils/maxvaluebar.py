@@ -262,7 +262,7 @@ class MAXValueBar(TaurusWidget):
         if evt_type in (tango.EventType.PERIODIC_EVENT,
                         tango.EventType.CHANGE_EVENT):
             if evt_value.quality == tango.AttrQuality.ATTR_VALID:
-                self.value_trigger.emit(evt_value.value, evt_value.w_value)
+                self.value_trigger.emit(evt_value.value, evt_value.wvalue)
         elif evt_type in (tango.EventType.ATTR_CONF_EVENT,
                           tango.EventType.QUALITY_EVENT):
             # Note: why don't I get "ATTR_CONF" events when the attribute

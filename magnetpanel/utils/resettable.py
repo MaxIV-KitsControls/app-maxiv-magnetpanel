@@ -14,7 +14,7 @@ class ResettableTaurusValue(TaurusValue):
     def storeCurrentValue(self):
         """Keep the attribute value from when the widget is created"""
         attr = self.getModelValueObj()
-        self._storedValue = attr.w_value
+        self._storedValue = attr.wvalue
 
     def resetToStoredValue(self):
         model = self.getModelObj()

@@ -301,7 +301,7 @@ class CyclePanel(TaurusWidget):
     def handle_cycling_state(self, evt_src, evt_type, evt_value):
         if evt_type in [tango.EventType.CHANGE_EVENT,
                         tango.EventType.PERIODIC_EVENT]:
-            self.trend_trigger.emit(evt_value.value)
+            self.trend_trigger.emit(evt_value.rvalue)
 
     def set_trend_paused(self, value):
         self.trend.setForcedReadingPeriod(0.2 if value else -1)
