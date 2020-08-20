@@ -1,25 +1,15 @@
-# Imports
-try:
-    from collections import defaultdict
-except ImportError:
-    from defaultdict import defaultdict
 import sys
-import PyTango
-# Taurus imports
-try:
-    from taurus.qt import QtGui
-    from taurus.qt.qtgui.panel import TaurusWidget
-except ImportError:
-    from taurus.external.qt import QtGui
-    from taurus.qt.qtgui.container import TaurusWidget
 
-# MagnetPanel imports
-from magnetpanel.utils.widgets import TaurusLazyQTabWidget
-from magnetpanel.widget.panels import MagnetCircuitPanel, MagnetListPanel
-from magnetpanel.widget.panels import CyclePanel, FieldPanel, PowerSupplyPanel
-from magnetpanel.widget.panels import BinpPowerSupplyPanel, SwitchBoardPanel
-
+import tango
+from taurus.external.qt import QtGui
 from taurus.qt.qtgui.button import TaurusCommandButton
+from taurus.qt.qtgui.container import TaurusWidget
+
+from magnetpanel.utils.switchboard import SwitchBoardPanel
+from magnetpanel.utils.widgets import TaurusLazyQTabWidget
+from magnetpanel.widget.panels import BinpPowerSupplyPanel
+from magnetpanel.widget.panels import CyclePanel, FieldPanel, PowerSupplyPanel
+from magnetpanel.widget.panels import MagnetCircuitPanel, MagnetListPanel
 
 PERIOD_ARG = "--taurus-polling-period="
 
@@ -45,6 +35,7 @@ def hack_circuitpanel(widget, ps_model):
     h_box.addWidget(circuit.disable_trigger_button)
     circuit.vbox.insertLayout(1, h_box)
 
+
 def make_binpps_panel(widget):
     """ Switch PowerSupplyPanel to BinpPowerSupplyPanel """
     widget.ps_widget = BinpPowerSupplyPanel()
@@ -54,8 +45,6 @@ def make_binpps_panel(widget):
     widget.ps_tab = widget.tabs.insertTab(1, widget.ps_widget, "Power supply")
     # default view is circuit
     widget.tabs.setCurrentIndex(widget.circuit_tab)
-
-
 
 
 class MagnetPanel(TaurusWidget):
@@ -95,7 +84,7 @@ class MagnetPanel(TaurusWidget):
 
     def setModel(self, model):
         TaurusWidget.setModel(self, model)
-        db = PyTango.Database()
+        db = tango.Database()
         devclass = db.get_class_for_device(str(model))
         # Devices models from magnet device
         if devclass == "Magnet":
@@ -106,7 +95,7 @@ class MagnetPanel(TaurusWidget):
             # machine.  This part should be removed in the future,
             # whenever the CircuitProxies property goes away.
             circuit_props = ["CircuitProxies",  # old property
-                             "MainCoilProxy"]   # new property
+                             "MainCoilProxy"]  # new property
             circuits = db.get_device_property(model, circuit_props)
             if circuits["CircuitProxies"]:
                 circuit = circuits["CircuitProxies"][0]
@@ -180,9 +169,9 @@ class TrimCoilCircuitPanel(TaurusWidget):
 
     def setModel(self, trim):
         TaurusWidget.setModel(self, trim)
-        db = PyTango.Database()
+        db = tango.Database()
         if trim:
-            self.setWindowTitle("Trim coil panel: %s" % trim)
+            self.setWindowTitle(f"Trim coil panel: {trim}")
             swb = str(db.get_device_property(
                 trim, "SwitchBoardProxy")["SwitchBoardProxy"][0])
             ps = str(db.get_device_property(
@@ -206,11 +195,17 @@ class TrimCoilCircuitPanel(TaurusWidget):
 
 
 def magnet_main():
-    from taurus.qt.qtgui.application import TaurusApplication
     import sys
 
+    from taurus.core.util import argparse
+    from taurus.qt.qtgui.application import TaurusApplication
+
     set_polling_period(1000)
-    app = TaurusApplication(sys.argv)
+
+    parser = argparse.get_taurus_parser()
+    parser.set_usage("%prog [model1]")
+
+    app = TaurusApplication(cmd_line_parser=parser)
     args = app.get_command_line_args()
 
     w = MagnetPanel()
@@ -225,10 +220,15 @@ def magnet_main():
 
 
 def trimcoil_main():
-    from taurus.qt.qtgui.application import TaurusApplication
     import sys
 
-    app = TaurusApplication(sys.argv)
+    from taurus.core.util import argparse
+    from taurus.qt.qtgui.application import TaurusApplication
+
+    parser = argparse.get_taurus_parser()
+    parser.set_usage("%prog [model1]")
+
+    app = TaurusApplication(cmd_line_parser=parser)
     args = app.get_command_line_args()
 
     w = TrimCoilCircuitPanel()

@@ -1,22 +1,10 @@
-try:
-    from collections import defaultdict
-except ImportError:
-    from defaultdict import defaultdict
 from math import isnan
 
-try:
-    from taurus.qt import QtCore, QtGui
-    from taurus.qt.qtgui.panel import TaurusWidget, TaurusForm
-    from taurus.qt.qtgui.display import TaurusLabel
-
-except ImportError:
-    from taurus.external.qt import QtCore, QtGui
-    from taurus.qt.qtgui.container import TaurusWidget
-    from taurus.qt.qtgui.panel import TaurusForm
-    from taurus.qt.qtgui.display import TaurusLabel
-
+import tango
 from taurus import Attribute
-import PyTango
+from taurus.external.qt import QtCore, QtGui
+from taurus.qt.qtgui.container import TaurusWidget
+from taurus.qt.qtgui.display import TaurusLabel
 
 
 class AttributeColumn(object):
@@ -45,8 +33,8 @@ class TableItem(QtGui.QTableWidgetItem):
                 self.value.wvalue is not None)
 
     def event_received(self, evt_src, evt_type, evt_value):
-        if evt_type in [PyTango.EventType.CHANGE_EVENT,
-                        PyTango.EventType.PERIODIC_EVENT]:
+        if evt_type in [tango.EventType.CHANGE_EVENT,
+                        tango.EventType.PERIODIC_EVENT]:
             self.value = evt_value
             self.source = evt_src
             self.trigger.emit(self.row(), self.column())
@@ -55,7 +43,6 @@ class TableItem(QtGui.QTableWidgetItem):
 
 
 class AttributeColumnsTable(TaurusWidget):
-
     """Display several 1D spectrum attributes belonging to the same
     device as columns in a table."""
 
@@ -103,7 +90,7 @@ class AttributeColumnsTable(TaurusWidget):
 
                 # Check if there are any columns at all
                 row_lengths = [len(a.read().value) for a in self.attributes
-                               if a.read().quality == PyTango.AttrQuality.ATTR_VALID]
+                               if a.read().quality == tango.AttrQuality.ATTR_VALID]
                 if not any(row_lengths):
                     return None
                 self.table.setRowCount(max(row_lengths))
@@ -119,17 +106,17 @@ class AttributeColumnsTable(TaurusWidget):
                     col = AttributeColumn(self, i)
                     self._columns.append(col)  # keep reference to prevent GC
                     att.addListener(col.event_received)
-            except PyTango.DevFailed:
+            except tango.DevFailed:
                 pass
 
     def keyPressEvent(self, e):
         """Copy selected cells to the clipboard on Ctrl+C"""
-        if (e.modifiers() & QtCore.Qt.ControlModifier):
+        if e.modifiers() & QtCore.Qt.ControlModifier:
             selected = self.table.selectedRanges()
             if e.key() == QtCore.Qt.Key_C:
                 s = ""
-                for r in xrange(selected[0].topRow(), selected[0].bottomRow() + 1):
-                    for c in xrange(selected[0].leftColumn(), selected[0].rightColumn() + 1):
+                for r in range(selected[0].topRow(), selected[0].bottomRow() + 1):
+                    for c in range(selected[0].leftColumn(), selected[0].rightColumn() + 1):
                         try:
                             s += str(self.table.item(r, c).text()) + "\t"
                         except AttributeError:
@@ -139,11 +126,11 @@ class AttributeColumnsTable(TaurusWidget):
                 clipboard.setText(s)
 
     def onEvent(self, column, evt_src, evt_type, evt_value):
-        if evt_type in [PyTango.EventType.CHANGE_EVENT,
-                        PyTango.EventType.PERIODIC_EVENT]:
+        if evt_type in [tango.EventType.CHANGE_EVENT,
+                        tango.EventType.PERIODIC_EVENT]:
             self._values[column] = evt_value
             self.trigger.emit(column)
-        if isinstance(evt_value, PyTango.DeviceAttributeConfig):
+        if isinstance(evt_value, tango.DeviceAttributeConfig):
             self._config[column] = evt_value
 
     def updateColumn(self, column):
@@ -170,25 +157,24 @@ class AttributeColumnsTable(TaurusWidget):
 
 
 class DeviceRowsTable(TaurusWidget):
-
     """A widget that displays a table where each row displays a device,
     and the values of selected attributes."""
 
     STATE_COLORS = {
-        PyTango.DevState.ON: (0, 255, 0),
-        PyTango.DevState.OFF: (255, 255, 255),
-        PyTango.DevState.CLOSE: (255, 255, 255),
-        PyTango.DevState.OPEN: (0, 255, 0),
-        PyTango.DevState.INSERT: (255, 255, 255),
-        PyTango.DevState.EXTRACT: (0, 255, 0),
-        PyTango.DevState.MOVING: (128, 160, 255),
-        PyTango.DevState.STANDBY: (255, 255, 0),
-        PyTango.DevState.FAULT: (255, 0, 0),
-        PyTango.DevState.INIT: (204, 204, 122),
-        PyTango.DevState.RUNNING: (128, 160, 255),
-        PyTango.DevState.ALARM:  (255, 140, 0),
-        PyTango.DevState.DISABLE: (255, 0, 255),
-        PyTango.DevState.UNKNOWN: (128, 128, 128),
+        tango.DevState.ON: (0, 255, 0),
+        tango.DevState.OFF: (255, 255, 255),
+        tango.DevState.CLOSE: (255, 255, 255),
+        tango.DevState.OPEN: (0, 255, 0),
+        tango.DevState.INSERT: (255, 255, 255),
+        tango.DevState.EXTRACT: (0, 255, 0),
+        tango.DevState.MOVING: (128, 160, 255),
+        tango.DevState.STANDBY: (255, 255, 0),
+        tango.DevState.FAULT: (255, 0, 0),
+        tango.DevState.INIT: (204, 204, 122),
+        tango.DevState.RUNNING: (128, 160, 255),
+        tango.DevState.ALARM: (255, 140, 0),
+        tango.DevState.DISABLE: (255, 0, 255),
+        tango.DevState.UNKNOWN: (128, 128, 128),
         None: (128, 128, 128)
     }
 
@@ -214,12 +200,12 @@ class DeviceRowsTable(TaurusWidget):
 
     def keyPressEvent(self, e):
         """Copy selected cells to the clipboard on Ctrl+C"""
-        if (e.modifiers() & QtCore.Qt.ControlModifier):
+        if e.modifiers() & QtCore.Qt.ControlModifier:
             selected = self.table.selectedRanges()
             if e.key() == QtCore.Qt.Key_C:
                 s = ""
-                for r in xrange(selected[0].topRow(), selected[0].bottomRow() + 1):
-                    for c in xrange(selected[0].leftColumn(), selected[0].rightColumn() + 1):
+                for r in range(selected[0].topRow(), selected[0].bottomRow() + 1):
+                    for c in range(selected[0].leftColumn(), selected[0].rightColumn() + 1):
                         try:
                             s += str(self.table.item(r, c).text()) + "\t"
                         except AttributeError:
@@ -230,7 +216,7 @@ class DeviceRowsTable(TaurusWidget):
 
     def setModel(self, devices, attributes=[]):
         if not devices:
-            for dev, attrs in self.attributes.items():
+            for dev, attrs in list(self.attributes.items()):
                 for att in attrs:
                     att and att.removeListener(
                         self._items[dev][att.name].event_received)
@@ -239,9 +225,7 @@ class DeviceRowsTable(TaurusWidget):
                 # TaurusWidget.setModel(self, attrs[0].rsplit("/", 1)[0])
                 attrnames = [a[0] if isinstance(a, tuple) else a
                              for a in attributes]
-                self.attributes = dict((dev, [Attribute("%s/%s" % (dev, a))
-                                              for a in attrnames])
-                                       for dev in devices)
+                self.attributes = dict((dev, [Attribute(f"{dev}/{a}") for a in attrnames]) for dev in devices)
 
                 self.table.setColumnCount(len(attributes) + 1)
                 colnames = [a[1] if isinstance(a, tuple) else a
@@ -267,7 +251,7 @@ class DeviceRowsTable(TaurusWidget):
                         self.table.setItem(r, c, item)
                         att.addListener(item.event_received)
 
-            except PyTango.DevFailed:
+            except tango.DevFailed:
                 pass
 
     def update_item(self, row, column):
@@ -293,7 +277,7 @@ class DeviceRowsTable(TaurusWidget):
             item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsEnabled)
 
         # Set background color
-        if config.type == 5: # DevState
+        if config.type == 5:  # DevState
             if value.rvalue in self.STATE_COLORS:
                 item.setBackgroundColor(QtGui.QColor(*self.STATE_COLORS[value.rvalue]))
 
@@ -302,13 +286,12 @@ class DeviceRowsTable(TaurusWidget):
         if not isinstance(item, TableItem) or not item.writable_boolean:
             return
         button_state = (item.checkState() == QtCore.Qt.Checked)
-        value_state = item.value.w_value
+        value_state = item.value.wvalue
         if button_state != value_state:
             item.source.write(button_state)
 
 
 class DevnameAndState(TaurusWidget):
-
     """A widget that displays the name and state of a device"""
 
     def __init__(self, parent=None):
@@ -342,16 +325,15 @@ class DevnameAndState(TaurusWidget):
 
     def setModel(self, device):
         TaurusWidget.setModel(self, device)
-        self.devicename_label.setText("<b>%s</b>" % device)
+        self.devicename_label.setText(f"<b>{device}</b>")
         # self.state_led.setModel("%s/State" % device)
         if device:
-            self.state_label.setModel("%s/State" % device)
+            self.state_label.setModel(f"{device}/State")
         else:
             self.state_label.setModel(None)
 
 
 class StatusArea(TaurusWidget):
-
     """A (scrolling) text area that displays device status, or any other
     string attribute."""
 
@@ -383,7 +365,7 @@ class StatusArea(TaurusWidget):
         if model:
             split_model = model.split("/")
             if len(split_model) < 4:
-                self.status = Attribute("%s/Status" % model)
+                self.status = Attribute(f"{model}/Status")
             else:
                 self.status = Attribute(model)
             self.status.addListener(self.onStatusChange)
@@ -391,16 +373,15 @@ class StatusArea(TaurusWidget):
             self.status and self.status.removeListener(self.onStatusChange)
 
     def onStatusChange(self, evt_src, evt_type, evt_value):
-        if evt_type in [PyTango.EventType.CHANGE_EVENT,
-                        PyTango.EventType.PERIODIC_EVENT]:
-            self.statusTrigger.emit(evt_value.value)
+        if evt_type in [tango.EventType.CHANGE_EVENT,
+                        tango.EventType.PERIODIC_EVENT]:
+            self.statusTrigger.emit(evt_value.rvalue)
 
     def updateStatus(self, status):
         self.status_label.setText(status)
 
 
 class ToggleButton(TaurusWidget):
-
     """A button that has two states, pressed and unpressed. When pressing
     it, the 'down' command is run, and when unpressing it the 'up' command
     is run. The 'pressedness' of the button is connected to a given
@@ -441,30 +422,29 @@ class ToggleButton(TaurusWidget):
                 self.state.removeListener(self.handle_state_event)
 
     def onClick(self):
-        print "state is", self.state.read()
+        print("state is", self.state.read())
         pressed = self.state.read().value == self._state
-        print "pressed", pressed
+        print("pressed", pressed)
         if pressed:
-            print "running up_command", self._up_command
+            print("running up_command", self._up_command)
             self.up_command()
         else:
-            print "running down_command", self._down_command
+            print("running down_command", self._down_command)
             self.down_command()
 
     def change_state(self, new_state):
-        print "change_state", new_state
+        print("change_state", new_state)
         self.button.setChecked(new_state)
         self.button.setText((self._down_command, self._up_command)[new_state])
 
     def handle_state_event(self, evt_src, evt_type, evt_value):
-        if evt_type in [PyTango.EventType.CHANGE_EVENT,
-                        PyTango.EventType.PERIODIC_EVENT]:
-            print "state", self._state
+        if evt_type in [tango.EventType.CHANGE_EVENT,
+                        tango.EventType.PERIODIC_EVENT]:
+            print("state", self._state)
             self.state_trigger.emit(evt_value.value == self._state)
 
 
 class TaurusLazyQTabWidget(QtGui.QTabWidget):
-
     """A tabbed container for multiple Taurus widgets, which "lazily" sets
     the models for each tab when it's first selected.
     """
@@ -505,6 +485,7 @@ class TaurusLazyQTabWidget(QtGui.QTabWidget):
 if __name__ == "__main__":
     import sys
     from taurus.qt.qtgui.application import TaurusApplication
+
     app = TaurusApplication(sys.argv)
     # w = StatusArea()
     w = DevnameAndState()

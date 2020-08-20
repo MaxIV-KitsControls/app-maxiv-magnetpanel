@@ -1,22 +1,20 @@
-from taurus.external.qt.QtCore import QSize
 from taurus.external.qt import QtCore
+from taurus.external.qt.QtCore import QSize
 from taurus.external.qt.QtGui import QIcon, QPushButton, QWidget
-from taurus.external.qt import Qt
 from taurus.qt.qtgui.panel import TaurusValue
 
 
 class ResettableTaurusValue(TaurusValue):
-
-    "A TaurusValue with a reset button (if writable)."
+    """A TaurusValue with a reset button (if writable)."""
 
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         self._storedValue = None
 
     def storeCurrentValue(self):
-        "Keep the attribute value from when the widget is created"
+        """Keep the attribute value from when the widget is created"""
         attr = self.getModelValueObj()
-        self._storedValue = attr.w_value
+        self._storedValue = attr.wvalue
 
     def resetToStoredValue(self):
         model = self.getModelObj()
@@ -40,15 +38,15 @@ class ResettableTaurusValue(TaurusValue):
 
 
 class DummyExtraWidget(QWidget):
-    "Just a placeholder"
+    """Just a placeholder"""
+
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
         self.setFixedWidth(0)
 
 
 class ValueResetButton(QPushButton):
-
-    "A button to store/reset a write-value"
+    """A button to store/reset a write-value"""
 
     # TODO: right-click to store value
 
@@ -86,9 +84,9 @@ class ValueResetButton(QPushButton):
             fmt = attr.format if attr.format != "Not specified" else None
             unit = attr.unit if attr.unit != "No unit" else ""
             if fmt:
-                tooltip = ('Reset to value: <b>%s %s</b>' % (fmt, unit)) % value
+                tooltip = f"Reset to value: <b>{fmt} {unit}</b>" % value
             else:
-                tooltip = 'Reset to value: <b>%s %s</b>' % (value, unit)
+                tooltip = f"Reset to value: <b>{value} {unit}</b>"
             self.setToolTip(tooltip + "<p>(Right-click to store)")
         else:
             self.setToolTip("")

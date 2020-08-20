@@ -1,26 +1,19 @@
-#!/usr/bin/env python
-
-from __future__ import division
-
 from contextlib import contextmanager
 
-# import PyQt4.Qt as Qt
-# from PyQt4 import QtGui, QtCore
-# from PyQt4 import
-from taurus.qt import Qt, QtCore, QtGui
-from taurus.qt.QtCore import QPointF as Point, QRectF as Rect
-from taurus.qt.qtgui.panel import TaurusWidget
+from taurus.external.qt import Qt, QtCore, QtGui, QtWidgets
+from taurus.external.qt.QtCore import QPointF as Point, QRectF as Rect
+from taurus.qt.qtgui.container import TaurusWidget
 from taurus import Configuration
-import PyTango
+import tango
 
 __all__ = ["MAXValueBar"]
 
-__docformat__ = 'restructuredtext'
+__docformat__ = "restructuredtext"
 
 TICK_FORMAT = "%.1f"
 
 
-class ValueBarWidget(QtGui.QWidget):
+class ValueBarWidget(QtWidgets.QWidget):
 
     def __init__(self):
         super(ValueBarWidget, self).__init__()
@@ -94,20 +87,20 @@ class ValueBarWidget(QtGui.QWidget):
         if all(t is not None for t in ticks):
             n = len(ticks) - 1
             qp.setPen(QtGui.QColor(0, 0, 0))
-            qp.drawLine(Point(w, self.pad), Point(w, h+self.pad))
+            qp.drawLine(Point(w, self.pad), Point(w, h + self.pad))
             for i, tick in enumerate(ticks):
-                qp.drawLine(Point(w, h - i*h/n + self.pad) ,
-                            Point(w+5, h - i*h/n + self.pad))
-                qp.drawText(Point(w + self.pad, h - i*h/n + self.pad + fw/2),
+                qp.drawLine(Point(w, h - i * h / n + self.pad),
+                            Point(w + 5, h - i * h / n + self.pad))
+                qp.drawText(Point(w + self.pad, h - i * h / n + self.pad + fw / 2),
                             TICK_FORMAT % tick)
 
     @contextmanager
     def _scale(self, qp):
         size = self.size()
-        h = size.height() - 2*self.pad
+        h = size.height() - 2 * self.pad
 
         qp.translate(0, self.pad)
-        qp.scale(1, -h/(self.max_value - self.min_value))
+        qp.scale(1, -h / (self.max_value - self.min_value))
         qp.translate(0, -self.max_value)
         yield
         qp.resetTransform()
@@ -117,7 +110,7 @@ class ValueBarWidget(QtGui.QWidget):
         # TODO: clean up and complete the error handling; e.g. no limits,
         # non-valid qualities, etc.
 
-        font = QtGui.QFont('Serif', 7, QtGui.QFont.Light)
+        font = QtGui.QFont("Serif", 7, QtGui.QFont.Light)
         qp.setFont(font)
 
         metrics = qp.fontMetrics()
@@ -131,7 +124,7 @@ class ValueBarWidget(QtGui.QWidget):
         fh = metrics.height()
         size = self.size()
         w = size.width() - (self.pad + fw)
-        h = size.height() - 2*self.pad
+        h = size.height() - 2 * self.pad
 
         # draw things in the value scale
         with self._scale(qp):
@@ -162,7 +155,7 @@ class ValueBarWidget(QtGui.QWidget):
             # value bar
             qp.setPen(QtGui.QColor(0, 200, 0))
             qp.setBrush(QtGui.QColor(0, 200, 0))
-            qp.drawRect(Rect(10, 0, w-2*self.pad, self.value))
+            qp.drawRect(Rect(10, 0, w - 2 * self.pad, self.value))
 
             # write value line
             qp.setPen(QtGui.QColor(255, 0, 0))
@@ -182,7 +175,6 @@ def float_or_none(value):
 
 
 class MAXValueBar(TaurusWidget):
-
     value_trigger = QtCore.pyqtSignal(float, float)
     conf_trigger = QtCore.pyqtSignal()
 
@@ -195,7 +187,8 @@ class MAXValueBar(TaurusWidget):
         self._throttle_timer = QtCore.QTimer()
         self._throttle_timer.setInterval(200)
         self._throttle_timer.setSingleShot(True)
-        self.connect(self._throttle_timer, QtCore.SIGNAL("timeout()"), self._writeValue)
+        # self.connect(self._throttle_timer, QtCore.SIGNAL("timeout()"), self._writeValue)
+        self._throttle_timer.timeout.connect(self._writeValue)
 
         self._value = None
 
@@ -205,10 +198,10 @@ class MAXValueBar(TaurusWidget):
     @classmethod
     def getQtDesignerPluginInfo(cls):
         ret = TaurusWidget.getQtDesignerPluginInfo()
-        ret['module'] = 'maxvaluebar'
-        ret['group'] = 'MAX-lab Taurus Widgets'
-        ret['container'] = ':/designer/frame.png'
-        ret['container'] = False
+        ret["module"] = "maxvaluebar"
+        ret["group"] = "MAX-lab Taurus Widgets"
+        ret["container"] = ":/designer/frame.png"
+        ret["container"] = False
         return ret
 
     def _setup_ui(self):
@@ -223,22 +216,22 @@ class MAXValueBar(TaurusWidget):
     def setModel(self, model):
         TaurusWidget.setModel(self, model)
         self.updateConfig()
-        conf = Configuration("%s?configuration" % self.model)
+        conf = Configuration(f"{self.model}?configuration")
         conf.addListener(lambda *args: self.conf_trigger.emit())
 
     def _decimalDigits(self, fmt):
-        '''returns the number of decimal digits from a format string
-        (or None if they are not defined)'''
+        """returns the number of decimal digits from a format string
+        (or None if they are not defined)"""
         try:
-            if fmt[-1].lower() in ['f', 'g'] and '.' in fmt:
-                return int(fmt[:-1].split('.')[-1])
+            if fmt[-1].lower() in ["f", "g"] and "." in fmt:
+                return int(fmt[:-1].split(".")[-1])
             else:
                 return None
         except:
             return None
 
     def updateConfig(self):
-        conf = Configuration("%s?configuration" % self.model)
+        conf = Configuration(f"{self.model}?configuration")
         # Note: could be inefficient with lots of redraws?
         self.valuebar.setMaximum(float_or_none(conf.max_value))
         self.valuebar.setMinimum(float_or_none(conf.min_value))
@@ -257,7 +250,7 @@ class MAXValueBar(TaurusWidget):
             self.getModelObj().write(self._value)
 
     def throttledWrite(self, value):
-        """Intead of writing to Tango every time the value changes, we start a
+        """Instead of writing to Tango every time the value changes, we start a
         timer. Writes during the timer will be accumulated and when the timer
         runs out, the last value is written.
         """
@@ -266,12 +259,12 @@ class MAXValueBar(TaurusWidget):
             self._throttle_timer.start()
 
     def handleEvent(self, evt_src, evt_type, evt_value):
-        if evt_type in (PyTango.EventType.PERIODIC_EVENT,
-                        PyTango.EventType.CHANGE_EVENT):
-            if evt_value.quality == PyTango.AttrQuality.ATTR_VALID:
-                self.value_trigger.emit(evt_value.value, evt_value.w_value)
-        elif evt_type in (PyTango.EventType.ATTR_CONF_EVENT,
-                          PyTango.EventType.QUALITY_EVENT):
+        if evt_type in (tango.EventType.PERIODIC_EVENT,
+                        tango.EventType.CHANGE_EVENT):
+            if evt_value.quality == tango.AttrQuality.ATTR_VALID:
+                self.value_trigger.emit(evt_value.value, evt_value.wvalue)
+        elif evt_type in (tango.EventType.ATTR_CONF_EVENT,
+                          tango.EventType.QUALITY_EVENT):
             # Note: why don't I get "ATTR_CONF" events when the attribute
             # config changes? Seems like I get QUALITY events instead..?
             self.conf_trigger.emit()
@@ -291,7 +284,7 @@ class MAXValueBar(TaurusWidget):
 
         # We change the value by 1 in the least significant digit according
         # to the configured format.
-        value = self.valuebar.write_value + numSteps*self._delta
+        value = self.valuebar.write_value + numSteps * self._delta
         self.valuebar.setWriteValue(value)
         self.throttledWrite(value)
 
@@ -307,5 +300,5 @@ def main():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

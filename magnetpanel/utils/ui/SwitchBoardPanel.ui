@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>SwitchBoardPanel</class>
+ <class>TrimCoilSwitchBoard</class>
  <widget class="QWidget" name="TrimCoilSwitchBoard">
   <property name="geometry">
    <rect>
@@ -28,10 +28,10 @@
      <property name="wordWrap">
       <bool>true</bool>
      </property>
-     <property name="useParentModel">
+     <property name="useParentModel" stdset="0">
       <bool>false</bool>
      </property>
-     <property name="bgRole">
+     <property name="bgRole" stdset="0">
       <string>state</string>
      </property>
     </widget>
@@ -50,10 +50,10 @@
      </item>
      <item>
       <widget class="TaurusValueComboBox" name="modeCB">
-       <property name="useParentModel">
+       <property name="useParentModel" stdset="0">
         <bool>false</bool>
        </property>
-       <property name="autoApply">
+       <property name="autoApply" stdset="0">
         <bool>true</bool>
        </property>
       </widget>
@@ -76,7 +76,7 @@
   <customwidget>
    <class>QSvgWidget</class>
    <extends>QWidget</extends>
-   <header>PyQt4.QtSvg</header>
+   <header>PyQt5.QtSvg</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

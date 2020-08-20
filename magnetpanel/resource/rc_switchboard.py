@@ -6,9 +6,9 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt4 import QtCore
+from PyQt5 import QtCore
 
-qt_resource_data = "\
+qt_resource_data = b"\
 \x00\x00\x4d\xf8\
 \x3c\
 \x3f\x78\x6d\x6c\x20\x76\x65\x72\x73\x69\x6f\x6e\x3d\x22\x31\x2e\
@@ -7777,7 +7777,7 @@ qt_resource_data = "\
 \xbe\xa8\
 "
 
-qt_resource_name = "\
+qt_resource_name = b"\
 \x00\x0b\
 \x06\x59\xfe\x67\
 \x00\x75\
@@ -7819,7 +7819,7 @@ qt_resource_name = "\
 \x00\x65\x00\x78\x00\x74\x00\x75\x00\x70\x00\x6f\x00\x6c\x00\x65\x00\x2e\x00\x73\x00\x76\x00\x67\
 "
 
-qt_resource_struct = "\
+qt_resource_struct = b"\
 \x00\x00\x00\x00\x00\x02\x00\x00\x00\x03\x00\x00\x00\x01\
 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\
 \x00\x00\x00\x34\x00\x02\x00\x00\x00\x05\x00\x00\x00\x0a\
@@ -7837,10 +7837,13 @@ qt_resource_struct = "\
 \x00\x00\x00\xca\x00\x01\x00\x00\x00\x01\x00\x00\xdb\xc6\
 "
 
+
 def qInitResources():
     QtCore.qRegisterResourceData(0x01, qt_resource_struct, qt_resource_name, qt_resource_data)
 
+
 def qCleanupResources():
     QtCore.qUnregisterResourceData(0x01, qt_resource_struct, qt_resource_name, qt_resource_data)
+
 
 qInitResources()
