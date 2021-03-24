@@ -13,6 +13,7 @@ setup(
     include_package_data=True,
     packages=find_packages(),
     package_data={"":["*.ui"]},
+    install_requires=["taurus"],
     #scripts=["scripts/ctmagnet",
     #         "scripts/cttrimcoil"]
     entry_points = {"console_scripts" : ["cttrimcoil = magnetpanel:trimcoil_main" ,  "ctmagnet = magnetpanel:magnet_main"]}
