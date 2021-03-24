@@ -3,8 +3,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="python-magnetpanel",
-    version="0.7.3",
+    name="magnetpanel",
+    version="0.7.4",
     description="QT widget for controlling a magnet circuit.",
     author="Johan Forsberg",
     author_email="johan.forsberg@maxlab.lu.se",
@@ -13,6 +13,7 @@ setup(
     include_package_data=True,
     packages=find_packages(),
     package_data={"":["*.ui"]},
+    install_requires=["taurus"],
     #scripts=["scripts/ctmagnet",
     #         "scripts/cttrimcoil"]
     entry_points = {"console_scripts" : ["cttrimcoil = magnetpanel:trimcoil_main" ,  "ctmagnet = magnetpanel:magnet_main"]}
