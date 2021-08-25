@@ -7,10 +7,10 @@ import sys
 import PyTango
 # Taurus imports
 try:
-    from taurus.qt import QtGui
+    from taurus.qt import QtGui, QtCore
     from taurus.qt.qtgui.panel import TaurusWidget
 except ImportError:
-    from taurus.external.qt import QtGui
+    from taurus.external.qt import QtGui, QtCore
     from taurus.qt.qtgui.container import TaurusWidget
 
 # MagnetPanel imports
@@ -68,11 +68,21 @@ class MagnetPanel(TaurusWidget):
 
     def _setup_ui(self):
         # layout
-        hbox = QtGui.QHBoxLayout(self)
-        self.setLayout(hbox)
+        vbox = QtGui.QVBoxLayout(self)
+        self.setLayout(vbox)
+        
+        # circuit selector
+        label = QtGui.QLabel("Circuit selector:", parent=self)
+        label.setAlignment(QtCore.Qt.AlignCenter)
+        vbox.addWidget(label)
+        self.circuit_combobox = QtGui.QComboBox(parent=self)
+        self.circuit_combobox.currentIndexChanged.connect(self._circuit_selected)
+        vbox.addWidget(self.circuit_combobox)
+
+
         # tabs
         tabs = self.tabs = TaurusLazyQTabWidget()
-        hbox.addWidget(tabs)
+        vbox.addWidget(tabs)
         # circuit panel
         self.circuit_widget = MagnetCircuitPanel()
         self.circuit_tab = tabs.addTab(self.circuit_widget, "Circuit")
@@ -106,14 +116,18 @@ class MagnetPanel(TaurusWidget):
             # machine.  This part should be removed in the future,
             # whenever the CircuitProxies property goes away.
             circuit_props = ["CircuitProxies",  # old property
-                             "MainCoilProxy"]   # new property
+                             "MainCoilProxy",
+                             "TrimCoilProxies"]   # new property
             circuits = db.get_device_property(model, circuit_props)
             if circuits["CircuitProxies"]:
                 circuit = circuits["CircuitProxies"][0]
+                # circuit selector
+                self.circuit_combobox.addItems(circuits["CircuitProxies"])
             else:
                 # this will be the only case in the future
                 circuit = circuits["MainCoilProxy"][0]
-            self.setWindowTitle("Magnet circuit panel: %s" % circuit)
+                self.circuit_combobox.addItems(circuits["MainCoilProxy"])
+            self.setWindowTitle("Magnet panel: %s" % model)
             # get PS device
             ps = str(db.get_device_property(
                 circuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
@@ -125,7 +139,7 @@ class MagnetPanel(TaurusWidget):
                 make_binpps_panel(self)
                 hack_circuitpanel(self, ps)
                 self.resize(700, 500)
-            # set model
+            # tabs
             self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
         # Devices models from circuit device
         elif devclass in ("MagnetCircuit", "TrimCircuit"):
@@ -137,6 +151,7 @@ class MagnetPanel(TaurusWidget):
                 make_binpps_panel(self)
                 hack_circuitpanel(self, ps)
                 self.resize(700, 500)
+            self.circuit_combobox.addItems(model)
             self.tabs.setModel([model, ps, model, model, model])
         else:
             self.circuit_widget.setModel(None)
@@ -144,6 +159,40 @@ class MagnetPanel(TaurusWidget):
             self.field_widget.setModel(None)
             self.ps_widget.setModel(None)
             self.magnets_widget.setModel(None)
+            self.magnet_combobox.clear()
+
+    @QtCore.pyqtSlot(str)
+    def _circuit_selected(self, i):
+        circuit = self.circuit_combobox.itemText(i)
+        db = PyTango.Database()
+        devclass = db.get_class_for_device(str(circuit))
+        if circuit:
+            ps = str(db.get_device_property(
+                    circuit, "PowerSupplyProxy")["PowerSupplyProxy"][0])
+            if devclass in ("MagnetCircuit"):
+                if db.get_class_for_device(ps) == "PulsePowerSupply":
+                    # no cycling for pulse ps
+                    self.tabs.removeTab(self.cycle_tab)
+                    # change ps panel to bimp ps panel (for kicker and pinger)
+                    make_binpps_panel(self)
+                    hack_circuitpanel(self, ps)
+                    self.resize(700, 500)
+                self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
+            elif devclass in ("TrimCircuit"):
+                if db.get_class_for_device(ps) == "PulsePowerSupply":
+                    # no cycling for pulse ps
+                    self.tabs.removeTab(self.cycle_tab)
+                    make_binpps_panel(self)
+                    hack_circuitpanel(self, ps)
+                    self.resize(700, 500)
+                self.tabs.setModel([circuit, ps, circuit, circuit, circuit])
+            else:
+                self.circuit_widget.setModel(None)
+                self.cycle_widget.setModel(None)
+                self.field_widget.setModel(None)
+                self.ps_widget.setModel(None)
+                self.magnets_widget.setModel(None)
+                self.magnet_combobox.clear()
 
 
 class TrimCoilCircuitPanel(TaurusWidget):
